@@ -26,7 +26,37 @@ pip3 install sphinx-markdown-builder
 
 ## Usage
 
-[Contribute](https://github.com/codejamninja/sphinx-markdown-builder/blob/master/CONTRIBUTING.md) usage docs
+Load extension in configuration.
+
+_conf.py_
+```py
+extensions = [
+    'sphinx_markdown_builder'
+]
+```
+
+If using [recommonmark](https://github.com/rtfd/recommonmark), make sure you
+explicitly ignore the build files as they will conflict with the system.
+
+_conf.py_
+```py
+exclude_patterns = [
+    'build/*'
+]
+```
+
+Build markdown files with Makefile
+
+```sh
+make markdown
+```
+
+Build markdown files with `sphinx-build` command
+
+```sh
+cd docs
+sphinx-build -M markdown ./ build
+```
 
 
 ## Support
