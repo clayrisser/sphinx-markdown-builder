@@ -21,7 +21,7 @@ with open(path.join(here, 'requirements.txt'), 'r', encoding='utf-8') as f:
 setup(
     name='sphinx-to-jekyll',
 
-    version='0.0.1',
+    version='0.0.2',
 
     description='Generate jekyll markdown with frontmatter from sphinx documentation',
 

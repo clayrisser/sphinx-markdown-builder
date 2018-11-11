@@ -1,11 +1,11 @@
-from sphinx.builders import Builder
-
+from .jekyll_writer import JekyllWriter, JekyllTranslator
 from docutils.io import StringOutput
+from os import path
+from sphinx.builders import Builder
 from sphinx.builders import Builder
 from sphinx.locale import __
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir, os_path
-from sphinx.writers.text import TextWriter, TextTranslator
 
 if False:
     from typing import Any, Dict, Iterator, Set, Tuple
@@ -21,7 +21,7 @@ class JekyllBuilder(Builder):
 
     out_suffix = '.md'
     allow_parallel = True
-    default_translator_class = TextTranslator
+    default_translator_class = JekyllTranslator
 
     current_docname = None
 
@@ -49,7 +49,7 @@ class JekyllBuilder(Builder):
         return ''
 
     def prepare_writing(self, docnames):
-        self.writer = TextWriter(self)
+        self.writer = JekyllWriter(self)
 
     def write_doc(self, docname, doctree):
         self.current_docname = docname
