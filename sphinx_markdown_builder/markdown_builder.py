@@ -25,6 +25,8 @@ class MarkdownBuilder(Builder):
 
     current_docname = None
 
+    markdown_http_base = 'https://localhost'
+
     def init(self):
         self.secnumbers = {}
 

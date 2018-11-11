@@ -1,0 +1,65 @@
+{
+  "name": "hello-world",
+  "version": "0.0.3",
+  "description": "Hello world node script",
+  "private": true,
+  "keywords": [
+    "hello-world",
+    "hello",
+    "world",
+    "example",
+    "gatsby",
+    "sphinx",
+    "docs"
+  ],
+  "homepage": "https://github.com/codejamninja/hello-world",
+  "bugs": {
+    "url": "https://github.com/codejamninja/hello-world/issues",
+    "email": "jam@codejam.ninja"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Jam Risser",
+    "email": "jam@codejam.ninja",
+    "url": "https://codejam.ninja"
+  },
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codejamninja/hello-world"
+  },
+  "scripts": {
+    "build": "babel src -d lib",
+    "clean": "rimraf lib",
+    "lint": "npm run format && eslint ./",
+    "lint:fix": "npm run format && eslint --fix ./",
+    "format": "prettier --write ./src/**/*.js",
+    "prepublish": "npm run clean && npm run build",
+    "start": "babel-node src"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.1.5",
+    "@babel/core": "^7.1.5",
+    "@babel/node": "^7.0.0",
+    "@babel/preset-env": "^7.1.5",
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^10.0.1",
+    "babel-preset-everything": "^0.1.2",
+    "eslint": "^5.9.0",
+    "eslint-config-jam": "^0.1.6",
+    "eslint-plugin-jsx-a11y": "^6.1.2",
+    "eslint-plugin-react": "^7.11.1",
+    "gatsby-sphinx": "^0.0.3",
+    "rimraf": "^2.6.2"
+  },
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "eslintIgnore": [
+    "lib"
+  ],
+  "gitHead": "de2e47213459ed00f8483ed600efff12b9f83efb"
+}

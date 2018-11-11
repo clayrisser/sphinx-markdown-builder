@@ -1,0 +1,23 @@
+root = true
+
+[*]
+end_of_line = lf
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.py]
+charset = utf-8
+indent_size = 4
+
+[{m,M}akefile]
+charset = utf-8
+indent_style = tab
+
+[*.{js,jsx,json}]
+charset = utf-8
+
+[*.{md,rst}]
+charset = utf-8
+trim_trailing_whitespace = false

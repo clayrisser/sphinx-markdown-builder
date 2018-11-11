@@ -1,0 +1,6 @@
+{
+  "extends": ["jam"],
+  "rules": {
+    "no-console": "off"
+  }
+}

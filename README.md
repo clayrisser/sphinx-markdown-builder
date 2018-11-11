@@ -89,7 +89,7 @@ Review the [changelog](https://github.com/codejamninja/sphinx-markdown-builder/b
 ## Credits
 
 * [Jam Risser](https://codejam.ninja) - Author
-* [Chris Wrench](https://github.com/cgwrench/rst2md/blob/master/markdown.py) - Markdown Writer
+* [Matthew Brett](https://github.com/matthew-brett/nb2plots/blob/master/nb2plots/doctree2md.py) - doctree2md
 
 
 ## Support on Liberapay
