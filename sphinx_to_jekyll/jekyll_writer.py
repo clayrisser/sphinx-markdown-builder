@@ -452,6 +452,7 @@ class JekyllTranslator(nodes.NodeVisitor):
 
     def visit_document(self, node):
         # type: (nodes.Node) -> None
+        print(node)
         self.new_state(0)
 
     def depart_document(self, node):
@@ -535,9 +536,9 @@ class JekyllTranslator(nodes.NodeVisitor):
         text = None  # type: unicode
         text = ''.join(x[1] for x in self.states.pop() if x[0] == -1)  # type: ignore
         if self.add_secnumbers:
-            text = self.get_section_number_string(node) + text
+            text = '# ' + self.get_section_number_string(node) + text
         self.stateindent.pop()
-        title = ['', text, '%s' % (char * column_width(text)), '']  # type: List[unicode]
+        title = ['', text, '']  # type: List[unicode]
         if len(self.states) == 2 and len(self.states[-1]) == 0:
             # remove an empty line before title if it is first section title in the document
             title.pop(0)
@@ -1155,10 +1156,18 @@ class JekyllTranslator(nodes.NodeVisitor):
 
     def visit_reference(self, node):
         # type: (nodes.Node) -> None
-        if self.add_secnumbers:
-            numbers = node.get("secnumber")
-            if numbers is not None:
-                self.add_text('.'.join(map(str, numbers)) + self.secnumber_suffix)
+        ref = ''
+        if 'refuri' in node:
+            ref = node['refuri'] or '#'
+        else:
+            assert 'refid' in node, \
+                'References must have "refuri" or "refid" attribute.'
+            ref = '#' + node['refid']
+        self.add_text('[' + node['name'] + '](' + ref + ')')
+        # if self.add_secnumbers:
+        #     numbers = node.get("secnumber")
+        #     if numbers is not None:
+        #         self.add_text('.'.join(map(str, numbers)) + self.secnumber_suffix)
 
     def depart_reference(self, node):
         # type: (nodes.Node) -> None

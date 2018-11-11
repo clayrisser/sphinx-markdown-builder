@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class JekyllBuilder(Builder):
     name = 'jekyll'
-    format = 'text'
+    format = 'jekyll'
     epilog = __('The jekyll files are in %(outdir)s.')
 
     out_suffix = '.md'
