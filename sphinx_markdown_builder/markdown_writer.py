@@ -358,7 +358,7 @@ def my_wrap(text, width=MAXWIDTH, **kwargs):
     return w.wrap(text)
 
 
-class JekyllWriter(writers.Writer):
+class MarkdownWriter(writers.Writer):
     supported = ('text',)
     settings_spec = ('No options here.', '', ())
     settings_defaults = {}  # type: Dict
@@ -377,7 +377,7 @@ class JekyllWriter(writers.Writer):
         self.output = visitor.body
 
 
-class JekyllTranslator(nodes.NodeVisitor):
+class MarkdownTranslator(nodes.NodeVisitor):
     sectionchars = '*=-~"+`'
 
     def __init__(self, document, builder):

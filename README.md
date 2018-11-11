@@ -1,8 +1,8 @@
-# sphinx-to-jekyll
+# sphinx-markdown-builder
 
-[![GitHub stars](https://img.shields.io/github/stars/codejamninja/sphinx-to-jekyll.svg?style=social&label=Stars)](https://github.com/codejamninja/sphinx-to-jekyll)
+[![GitHub stars](https://img.shields.io/github/stars/codejamninja/sphinx-markdown-builder.svg?style=social&label=Stars)](https://github.com/codejamninja/sphinx-markdown-builder)
 
-> Generate jekyll markdown with frontmatter from sphinx documentation
+> sphinx markdown output
 
 Please ★ this repo if you found it useful ★ ★ ★
 
@@ -10,15 +10,12 @@ Please ★ this repo if you found it useful ★ ★ ★
 ## Features
 
 * Generates markdown
-* Generates frontmatter
-* Compatible with jekyll
-* Compatible with gatsby
 
 
 ## Installation
 
 ```sh
-pip3 install sphinx-to-jekyll
+pip3 install sphinx-markdown-builder
 ```
 
 
@@ -29,34 +26,34 @@ pip3 install sphinx-to-jekyll
 
 ## Usage
 
-[Contribute](https://github.com/codejamninja/sphinx-to-jekyll/blob/master/CONTRIBUTING.md) usage docs
+[Contribute](https://github.com/codejamninja/sphinx-markdown-builder/blob/master/CONTRIBUTING.md) usage docs
 
 
 ## Support
 
-Submit an [issue](https://github.com/codejamninja/sphinx-to-jekyll/issues/new)
+Submit an [issue](https://github.com/codejamninja/sphinx-markdown-builder/issues/new)
 
 
 ## Screenshots
 
-[Contribute](https://github.com/codejamninja/sphinx-to-jekyll/blob/master/CONTRIBUTING.md) a screenshot
+[Contribute](https://github.com/codejamninja/sphinx-markdown-builder/blob/master/CONTRIBUTING.md) a screenshot
 
 
 ## Contributing
 
-Review the [guidelines for contributing](https://github.com/codejamninja/sphinx-to-jekyll/blob/master/CONTRIBUTING.md)
+Review the [guidelines for contributing](https://github.com/codejamninja/sphinx-markdown-builder/blob/master/CONTRIBUTING.md)
 
 
 ## License
 
-[MIT License](https://github.com/codejamninja/sphinx-to-jekyll/blob/master/LICENSE)
+[MIT License](https://github.com/codejamninja/sphinx-markdown-builder/blob/master/LICENSE)
 
 [Jam Risser](https://codejam.ninja) © 2018
 
 
 ## Changelog
 
-Review the [changelog](https://github.com/codejamninja/sphinx-to-jekyll/blob/master/CHANGELOG.md)
+Review the [changelog](https://github.com/codejamninja/sphinx-markdown-builder/blob/master/CHANGELOG.md)
 
 
 ## Credits

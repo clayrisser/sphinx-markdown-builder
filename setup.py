@@ -19,15 +19,15 @@ with open(path.join(here, 'requirements.txt'), 'r', encoding='utf-8') as f:
         install_requires.append(line)
 
 setup(
-    name='sphinx-to-jekyll',
+    name='sphinx-markdown-builder',
 
-    version='0.0.2',
+    version='0.0.1',
 
-    description='Generate jekyll markdown with frontmatter from sphinx documentation',
+    description='sphinx markdown output',
 
     long_description=long_description,
 
-    url='https://github.com/codejamninja/sphinx-to-jekyll',
+    url='https://github.com/codejamninja/sphinx-markdown-builder',
 
     author='Jam Risser',
 
@@ -49,7 +49,7 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
 
-    keywords='sphinx jekyll docs documentation frontmatter markdown',
+    keywords='sphinx docs documentation markdown',
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
 
@@ -59,7 +59,7 @@ setup(
 
     entry_points = {
         'sphinx.builders': [
-            'jekyll = sphinx_to_jekyll',
+            'markdown = sphinx_markdown_builder',
         ],
     }
 )

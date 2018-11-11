@@ -47,7 +47,7 @@ link: install
 
 .PHONY: unlink
 unlink: install
-	@rm -r $(shell find . -name '*.egg-info')
+	-@rm -r $(shell find . -name '*.egg-info') 2>/dev/null | true
 
 .PHONY: clean
 clean:

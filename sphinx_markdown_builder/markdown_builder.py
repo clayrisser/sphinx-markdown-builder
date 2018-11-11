@@ -1,4 +1,4 @@
-from .jekyll_writer import JekyllWriter, JekyllTranslator
+from .markdown_writer import MarkdownWriter, MarkdownTranslator
 from docutils.io import StringOutput
 from os import path
 from sphinx.builders import Builder
@@ -14,14 +14,14 @@ if False:
 
 logger = logging.getLogger(__name__)
 
-class JekyllBuilder(Builder):
-    name = 'jekyll'
-    format = 'jekyll'
-    epilog = __('The jekyll files are in %(outdir)s.')
+class MarkdownBuilder(Builder):
+    name = 'markdown'
+    format = 'markdown'
+    epilog = __('The markdown files are in %(outdir)s.')
 
     out_suffix = '.md'
     allow_parallel = True
-    default_translator_class = JekyllTranslator
+    default_translator_class = MarkdownTranslator
 
     current_docname = None
 
@@ -49,7 +49,7 @@ class JekyllBuilder(Builder):
         return ''
 
     def prepare_writing(self, docnames):
-        self.writer = JekyllWriter(self)
+        self.writer = MarkdownWriter(self)
 
     def write_doc(self, docname, doctree):
         self.current_docname = docname
