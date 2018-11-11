@@ -2,7 +2,7 @@
 
 [![GitHub stars](https://img.shields.io/github/stars/codejamninja/sphinx-markdown-builder.svg?style=social&label=Stars)](https://github.com/codejamninja/sphinx-markdown-builder)
 
-> sphinx markdown output
+> sphinx builder that outputs markdown files
 
 Please ★ this repo if you found it useful ★ ★ ★
 
