@@ -9,6 +9,8 @@
 
 Please ★ this repo if you found it useful ★ ★ ★
 
+If you want frontmatter support please use (sphinx-jekyll-builder)[https://github.com/codejamninja/sphinx-jekyll-builder]
+
 
 ## Features
 
