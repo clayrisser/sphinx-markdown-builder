@@ -1,6 +1,9 @@
 # sphinx-markdown-builder
 
-[![GitHub stars](https://img.shields.io/github/stars/codejamninja/sphinx-markdown-builder.svg?style=social&label=Stars)](https://github.com/codejamninja/sphinx-markdown-builder)
+[![PyPI](https://img.shields.io/pypi/v/sphinx-markdown-builder.svg?style=flat-square)](https://pypi.org/project/sphinx-markdown-builder)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/sphinx-markdown-builder.svg?style=flat-square)](https://pypi.org/project/sphinx-markdown-builder)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sphinx-markdown-builder.svg?style=flat-square)](https://pypi.org/project/sphinx-markdown-builder)
+[![GitHub stars](https://img.shields.io/github/stars/codejamninja/sphinx-markdown-builder.svg?style=social&label=Stars&style=flat-square)](https://github.com/codejamninja/sphinx-markdown-builder)
 
 > sphinx builder that outputs markdown files
 
