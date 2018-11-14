@@ -1,4 +1,4 @@
-from nb2plots.doctree2md import Translator, Writer
+from .doctree2md import Translator, Writer
 
 class MarkdownTranslator(Translator):
     def visit_title(self, node):
