@@ -1,5 +1,6 @@
 from .markdown_writer import MarkdownWriter, MarkdownTranslator
 from docutils.io import StringOutput
+from io import open
 from os import path
 from sphinx.builders import Builder
 from sphinx.builders import Builder
