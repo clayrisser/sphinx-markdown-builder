@@ -299,6 +299,8 @@ PASS_THRU_ELEMENTS = ('document',
                       'mpl_hint',
                       'pending_xref',
                       'compound',
+                      'line',
+                      'line_block'
                      )
 
 
@@ -448,7 +450,7 @@ class Translator(nodes.NodeVisitor):
 
     def visit_definition(self, node):
         self.add('\n\n')
-        self.start_level('    ', ':   ')
+        self.start_level('    ')
 
     def depart_definition(self, node):
         self.finish_level()
