@@ -52,7 +52,43 @@ class MarkdownBuilder(Builder):
         return ''
 
     def prepare_writing(self, docnames):
+        import pprint
+
+        # print "dependencies"
+        # pprint.pprint(self.env.dependencies)
+        #
+        # print "included"
+        # pprint.pprint(self.env.included)
+        #
+        # print "metadata"
+        # pprint.pprint(self.env.metadata)
+        #
+        # print "longtitles"
+        # pprint.pprint(self.env.longtitles)
+        #
+        # print "tocs"
+        # pprint.pprint(self.env.tocs)
+        #
+        # print "titles"
+        # pprint.pprint(self.env.titles)
+
+        print "toctree_includes"
+        pprint.pprint(self.env.toctree_includes)
+
         self.writer = MarkdownWriter(self)
+
+        # calculate parents and grandparents
+        self.parents = {}
+        self.grandparents = {}
+
+        # figure out parents
+        for (parent, children) in self.env.toctree_includes.iteritems():
+            for child in children:
+                self.parents[child] = parent
+
+        # figure out grandparents
+        for (docname, parent) in self.parents.iteritems():
+            self.grandparents[docname] = self.parents.get(parent)
 
     def write_doc(self, docname, doctree):
         self.current_docname = docname

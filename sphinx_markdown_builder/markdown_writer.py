@@ -4,9 +4,46 @@ class MarkdownTranslator(Translator):
 
     def __init__(self, document, builder=None):
         Translator.__init__(self, document, builder=None)
-
+        self.builder = builder
         self.rendering_table = False
         self.num_table_colums = 0
+
+
+    def visit_document(self, node):
+        # do nothing
+
+    def depart_document(self, node):
+        variables = {
+            'layout': 'default',
+            'title': self.builder.env.longtitles[self.builder.current_docname].astext()
+        }
+
+        # figure our parent
+        parent = self.builder.parents.get(self.builder.current_docname)
+        if parent:
+            variables['parent'] = self.builder.env.longtitles[parent].astext()
+
+        # figure out our grandparent
+        grandparent = self.builder.grandparents.get(self.builder.current_docname)
+        if grandparent:
+            variables['grand_parent'] = self.builder.env.longtitles[grandparent].astext()
+
+        # figure out if we have children
+        if self.builder.current_docname in self.builder.parents.itervalues():
+            # our page is declared as a parent page
+            variables['has_children'] = 'true'
+
+        frontmatter = ['---']
+        for (k, v) in variables.iteritems():
+            frontmatter.append('{}: {}'.format(k, v))
+        frontmatter.append('---')
+        frontmatter.append('')
+
+        self.add("\n".join(frontmatter), section='head')
+        Translator.depart_document(self, node)
+
+    def visit_title(self, node):
+        self.add((self.section_level) * '#' + ' ')
 
     def visit_Text(self, node):
         # overridden from base class implementation
@@ -29,21 +66,6 @@ class MarkdownTranslator(Translator):
         # if we are inside a table construct
         if not self.rendering_table:
             Translator.depart_paragraph(self, node)
-
-    def visit_title(self, node):
-        self.add((self.section_level) * '#' + ' ')
-
-    def visit_subtitle(self, node):
-        self.add((self.section_level + 1) * '#' + ' ')
-
-
-
-
-
-
-
-
-
 
 
 
