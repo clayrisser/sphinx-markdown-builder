@@ -82,6 +82,21 @@ class MarkdownBuilder(Builder):
             for child in children:
                 self.parents[child] = parent
 
+        custom_parents_str = self.env.config.overrides.get("md_parents")
+        if custom_parents_str:
+            # tk-multi-publish2=Toolkit App Reference&tk-framework-qtwidgets=Toolkit Framework Reference
+            for entry in custom_parents_str.split("&"):
+                (repo, parent) = entry.split("=")
+                rst_index_path = "{}/index".format(repo)
+                if parent == "/":
+                    # explicitly put this under the root
+                    # e.g. remove the parent
+                    if rst_index_path in self.parents:
+                        del self.parents[rst_index_path]
+                else:
+                    # use @ to denote an external reference to a page
+                    self.parents[rst_index_path] = "@{}".format(parent)
+
         # figure out grandparents
         for (docname, parent) in self.parents.iteritems():
             self.grandparents[docname] = self.parents.get(parent)

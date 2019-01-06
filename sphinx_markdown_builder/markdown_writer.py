@@ -20,12 +20,19 @@ class MarkdownTranslator(Translator):
         # figure our parent
         parent = self.builder.parents.get(self.builder.current_docname)
         if parent:
-            variables['parent'] = self.builder.env.longtitles[parent].astext()
+            if parent.startswith("@"):
+                # external reference to markdown page
+                variables['parent'] = parent[1:]
+            else:
+                variables['parent'] = self.builder.env.longtitles[parent].astext()
 
         # figure out our grandparent
         grandparent = self.builder.grandparents.get(self.builder.current_docname)
         if grandparent:
-            variables['grand_parent'] = self.builder.env.longtitles[grandparent].astext()
+            if grandparent.startswith("@"):
+                variables['grand_parent'] = grandparent[1:]
+            else:
+                variables['grand_parent'] = self.builder.env.longtitles[grandparent].astext()
 
         # figure out if we have children
         if self.builder.current_docname in self.builder.parents.itervalues():
