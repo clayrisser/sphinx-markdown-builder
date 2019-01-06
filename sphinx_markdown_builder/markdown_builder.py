@@ -7,6 +7,9 @@ from sphinx.builders import Builder
 from sphinx.locale import __
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir, os_path
+import shutil
+import os
+
 
 if False:
     from typing import Any, Dict, Iterator, Set, Tuple
@@ -52,30 +55,23 @@ class MarkdownBuilder(Builder):
         return ''
 
     def prepare_writing(self, docnames):
-        import pprint
 
-        # print "dependencies"
-        # pprint.pprint(self.env.dependencies)
-        #
-        # print "included"
-        # pprint.pprint(self.env.included)
-        #
-        # print "metadata"
-        # pprint.pprint(self.env.metadata)
-        #
-        # print "longtitles"
-        # pprint.pprint(self.env.longtitles)
-        #
-        # print "tocs"
-        # pprint.pprint(self.env.tocs)
-        #
-        # print "titles"
-        # pprint.pprint(self.env.titles)
+        # copy dependencies (images, references files)
+        print "copying dependencies..."
+        for (doc, deps) in self.env.dependencies.iteritems():
+            for dep in deps:
+                source = os.path.abspath(os.path.join(self.srcdir, dep))
+                target = os.path.abspath(os.path.join(self.outdir, dep))
+                target_dir = os.path.dirname(target)
 
-        print "toctree_includes"
-        pprint.pprint(self.env.toctree_includes)
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir)
 
-        self.writer = MarkdownWriter(self)
+                if not os.path.exists(source):
+                    print "warning: cannot find resource %s referenced from %s" % (dep, doc)
+                else:
+                    if not os.path.exists(target):
+                        shutil.copy(source, target)
 
         # calculate parents and grandparents
         self.parents = {}
@@ -89,6 +85,8 @@ class MarkdownBuilder(Builder):
         # figure out grandparents
         for (docname, parent) in self.parents.iteritems():
             self.grandparents[docname] = self.parents.get(parent)
+
+        self.writer = MarkdownWriter(self)
 
     def write_doc(self, docname, doctree):
         self.current_docname = docname
