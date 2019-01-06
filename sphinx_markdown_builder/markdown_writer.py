@@ -280,7 +280,7 @@ class MarkdownTranslator(Translator):
             if uri.startswith("/"):
                 uri = "." + uri
             print "added local: %s" % uri
-        self.add('\n\n[!image](%s)\n\n' % uri)
+        self.add('\n\n![image](%s)\n\n' % uri)
 
     def depart_image(self, node):
         """
