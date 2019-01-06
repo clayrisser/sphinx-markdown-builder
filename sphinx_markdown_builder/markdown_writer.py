@@ -1,5 +1,8 @@
 from .doctree2md import Translator, Writer
 
+import os
+import sys
+
 class MarkdownTranslator(Translator):
 
     def __init__(self, document, builder=None):
@@ -265,6 +268,18 @@ class MarkdownTranslator(Translator):
         Image directive
         """
         uri = node.attributes['uri']
+        print node
+        print node.attributes
+        print self.builder.current_docname
+        doc_folder = os.path.dirname(self.builder.current_docname)
+        print doc_folder
+        if uri.startswith(doc_folder):
+            # drop docname prefix
+            uri = uri[len(doc_folder):]
+            print "dropped precix: '%s'" % uri
+            if uri.startswith("/"):
+                uri = "." + uri
+            print "added local: %s" % uri
         self.add('\n\n[!image](%s)\n\n' % uri)
 
     def depart_image(self, node):
