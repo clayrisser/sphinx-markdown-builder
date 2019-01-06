@@ -8,10 +8,6 @@ class MarkdownTranslator(Translator):
         self.rendering_table = False
         self.num_table_colums = 0
 
-
-    def visit_document(self, node):
-        # do nothing
-
     def depart_document(self, node):
         variables = {
             'layout': 'default',
