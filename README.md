@@ -4,6 +4,8 @@
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/sphinx-markdown-builder.svg?style=flat-square)](https://pypi.org/project/sphinx-markdown-builder)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sphinx-markdown-builder.svg?style=flat-square)](https://pypi.org/project/sphinx-markdown-builder)
 [![GitHub stars](https://img.shields.io/github/stars/codejamninja/sphinx-markdown-builder.svg?style=flat-square&label=Stars)](https://github.com/codejamninja/sphinx-markdown-builder)
+[![Liberapay receiving](https://img.shields.io/liberapay/receives/codejamninja.svg?style=flat-square)](https://liberapay.com/codejamninja/donate)
+[![Liberapay patrons](https://img.shields.io/liberapay/patrons/codejamninja.svg?style=flat-square)](https://liberapay.com/codejamninja/donate)
 
 > sphinx builder that outputs markdown files
 
