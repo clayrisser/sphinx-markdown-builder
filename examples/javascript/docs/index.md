@@ -10,5 +10,14 @@
 [some](/link)
 
 | table | i |
-| -     | - |
+| ----- | - |
 | m     | i |
+
+
+<table>
+<row>
+<td>
+hi
+</td>
+</row>
+</table>
