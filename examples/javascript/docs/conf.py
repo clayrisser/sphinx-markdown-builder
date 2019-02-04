@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from recommonmark.parser import CommonMarkParser
+from recommonmark.parser import MarkdownParser
 
 author = 'Jam Risser'
 
@@ -15,7 +15,6 @@ extensions = [
     'sphinx_js',
     'sphinx_markdown_builder',
     'recommonmark',
-    'sphinx_markdown_tables'
 ]
 
 html_static_path = ['_static']
@@ -63,9 +62,9 @@ pygments_style = 'sphinx'
 
 release = '0.0.5'
 
-# source_parsers = {
-#     '.md': CommonMarkParser
-# }
+source_parsers = {
+    '.md': MarkdownParser
+}
 
 source_suffix = ['.rst', '.md']
 
@@ -92,7 +91,7 @@ def setup(app):
         'enable_auto_toc_tree': True,
         'enable_eval_rst': True,
         'enable_inline_math': True,
-        'enable_math': True
+        'enable_math': True,
     }, True)
     app.add_stylesheet('styles/main.css')
     app.add_javascript('scripts/main.js')

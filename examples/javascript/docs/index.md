@@ -9,15 +9,7 @@
 
 [some](/link)
 
-| table | i |
-| ----- | - |
-| m     | i |
-
-
-<table>
-<row>
-<td>
-hi
-</td>
-</row>
-</table>
+| one | two | three |
+| --- | --- | ----- |
+|   1 |   2 |     3 |
+|   4 |   5 |     6 |
