@@ -300,7 +300,7 @@ PASS_THRU_ELEMENTS = ('document',
                       'pending_xref',
                       'compound',
                       'line',
-                      'line_block'
+                      'line_block',
                      )
 
 

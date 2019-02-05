@@ -43,7 +43,7 @@ class MarkdownTranslator(Translator):
         self.add((self.section_level) * '#' + ' ')
 
     def depart_title(self, node):
-        pass
+        super(MarkdownTranslator, self).depart_title(node)
 
     def visit_desc(self, node):
         pass
