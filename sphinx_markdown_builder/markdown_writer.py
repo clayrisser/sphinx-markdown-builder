@@ -15,6 +15,10 @@ class MarkdownTranslator(Translator):
     tbodys = []
     theads = []
 
+    def __init__(self, document, builder=None):
+        Translator.__init__(self, document, builder=None)
+        self.builder = builder
+
     @property
     def rows(self):
         rows = []
@@ -30,113 +34,18 @@ class MarkdownTranslator(Translator):
         return rows
 
     def visit_document(self, node):
-        print(node)
-
-    def __init__(self, document, builder=None):
-        Translator.__init__(self, document, builder=None)
-        self.builder = builder
-        self.rendering_table = False
-        self.num_table_colums = 0
+        pass
 
     def depart_document(self, node):
-        variables = {
-            'layout': 'default',
-            'title': self.builder.env.longtitles[self.builder.current_docname].astext()
-        }
-
-        # figure our parent
-        parent = self.builder.parents.get(self.builder.current_docname)
-        if parent:
-            if parent.startswith("@"):
-                # external reference to markdown page
-                variables['parent'] = parent[1:]
-            else:
-                variables['parent'] = self.builder.env.longtitles[parent].astext()
-
-        # figure out our grandparent
-        grandparent = self.builder.grandparents.get(self.builder.current_docname)
-        if grandparent:
-            if grandparent.startswith("@"):
-                variables['grand_parent'] = grandparent[1:]
-            else:
-                variables['grand_parent'] = self.builder.env.longtitles[grandparent].astext()
-
-        # figure out if we have children
-        if self.builder.current_docname in self.builder.parents.itervalues():
-            # our page is declared as a parent page
-            variables['has_children'] = 'true'
-
-        frontmatter = ['---']
-        for (k, v) in variables.iteritems():
-            frontmatter.append('{}: {}'.format(k, v))
-        frontmatter.append('---')
-        frontmatter.append('')
-
-        self.add("\n".join(frontmatter), section='head')
-        Translator.depart_document(self, node)
+        pass
 
     def visit_title(self, node):
         self.add((self.section_level) * '#' + ' ')
 
-    def visit_Text(self, node):
-        # overridden from base class implementation
-        # to handle table rendering
-        if self.rendering_table:
-            # when rendering tables, make sure
-            # we remove all whitespace from running text
-            text = node.astext()
-            text = text.replace("\n", "")
-            self.add(text)
-        else:
-            Translator.visit_Text(self, node)
-
-    def depart_paragraph(self, node):
-        # overridden from base class implementation
-        # to handle table rendering
-
-        # opt out of default behaviour of
-        # adding a line break after paragraphs
-        # if we are inside a table construct
-        if not self.rendering_table:
-            Translator.depart_paragraph(self, node)
-
-
-
-    def __placeholder(self, node, is_entry=True):
-        self.add('`<%s>`\n' % (node.__class__))
-        # print "VISIT %s: %s" % (node.__class__, node)
-        # self.add('%s: %s' % (node.__class__, node.astext()))
-
-
-
-    # auto formatting of code
-
-    # classes:
-    #
-    # desc [desctype='class', objtype='class']
-    #   desc_signature [fullname='MyClass', ids='full_module.path.to.MyClass', module='full_module_path.to'
-    #       desc_annotation (e.g. 'class')
-    #       desc_addname (e.g. 'full_module.path.to.'
-    #       desc_name (e.g. 'MyClass')
-    #       desc_parameterlist
-    #           desc_parameter
-    #       comment
-    #   desc_content
-
-    # methods:
-    #
-    #
-
-
-
-
-
+    def depart_title(self, node):
+        pass
 
     def visit_desc(self, node):
-        # auto doc
-        #self.add("\n\n```")
-        #self.add(node.pformat())
-        #self.add("```\n\n")
         pass
 
     def depart_desc(self, node):
@@ -196,11 +105,9 @@ class MarkdownTranslator(Translator):
 
     def depart_desc_parameter(self, node):
         # single method/class ctr param
-
         # if there are additional params, include a comma
         if node.next_node(descend=False, siblings=True):
             self.add(", ")
-
 
     # list of parameters/return values/exceptions
     #
@@ -240,9 +147,6 @@ class MarkdownTranslator(Translator):
     def depart_literal_emphasis(self, node):
         self.add("*")
 
-
-
-
     def visit_title_reference(self, node):
         pass
 
@@ -251,7 +155,6 @@ class MarkdownTranslator(Translator):
 
     def visit_versionmodified(self, node):
         # deprecation and compatibility messages
-
         # type will hold something like 'deprecated'
         self.add("**%s:** " % node.attributes["type"].capitalize())
 
@@ -302,18 +205,12 @@ class MarkdownTranslator(Translator):
         Image directive
         """
         uri = node.attributes['uri']
-        print node
-        print node.attributes
-        print self.builder.current_docname
         doc_folder = os.path.dirname(self.builder.current_docname)
-        print doc_folder
         if uri.startswith(doc_folder):
             # drop docname prefix
             uri = uri[len(doc_folder):]
-            print "dropped precix: '%s'" % uri
             if uri.startswith("/"):
                 uri = "." + uri
-            print "added local: %s" % uri
         self.add('\n\n![image](%s)\n\n' % uri)
 
     def depart_image(self, node):
@@ -336,7 +233,6 @@ class MarkdownTranslator(Translator):
         """
         pass
 
-
     ################################################################################
     # tables
     #
@@ -355,12 +251,16 @@ class MarkdownTranslator(Translator):
     #         docutils.nodes.entry
 
     def visit_table(self, node):
-        self.add("\n")
-        self.rendering_table = True
+        self.tables.append(node)
 
     def depart_table(self, node):
-        self.add("\n\n")
-        self.rendering_table = False
+        self.tables.pop()
+
+    def visit_tabular_col_spec(self, node):
+        pass
+
+    def depart_tabular_col_spec(self, node):
+        pass
 
     def visit_colspec(self, node):
         pass
@@ -369,57 +269,10 @@ class MarkdownTranslator(Translator):
         pass
 
     def visit_tgroup(self, node):
-        self.num_table_colums = node.attributes['cols']
+        pass
 
     def depart_tgroup(self, node):
         pass
-
-    def visit_thead(self, node):
-        pass
-
-    def depart_thead(self, node):
-        pass
-
-    def visit_tbody(self, node):
-        # markdown tables require a header (thead)
-        # inject one if missing
-        tgroup_node = node.parent
-        if 'thead' not in [x.__class__.__name__ for x in tgroup_node.children]:
-            header = " | ".join(["   "] * self.num_table_colums)
-            self.add("| %s |\n" % header)
-
-        # add table header/body separation
-        header = " | ".join(["---"] * self.num_table_colums)
-        self.add("| %s |\n" % header )
-
-    def depart_tbody(self, node):
-        pass
-
-    def visit_row(self, node):
-        self.add('| ')
-
-    def depart_row(self, node):
-        self.add("\n")
-
-    def visit_entry(self, node):
-        pass
-
-    def depart_entry(self, node):
-        self.add(' | ')
-
-    def visit_tabular_col_spec(self, node):
-        pass
-
-    def depart_tabular_col_spec(self, node):
-        pass
-
-
-
-    def visit_table(self, node):
-        self.tables.append(node)
-
-    def depart_table(self, node):
-        self.tables.pop()
 
     def visit_thead(self, node):
         if not len(self.tables):
