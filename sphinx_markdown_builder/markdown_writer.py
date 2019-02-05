@@ -1,15 +1,30 @@
 from .doctree2md import Translator, Writer
 from docutils import nodes
+from pydash import _
 import html2text
 
 h = html2text.HTML2Text()
 
 class MarkdownTranslator(Translator):
-    head_entries = 0
-    row_depth = 0
-    table_depth = 0
-    tbody_depth = 0
-    thead_depth = 0
+    row_entries = []
+    rows = []
+    tables = []
+    tbodys = []
+    theads = []
+
+    @property
+    def rows(self):
+        rows = []
+        if not len(self.tables):
+            return rows
+        for node in self.tables[len(self.tables) - 1].children:
+            if isinstance(node, nodes.row):
+                rows.append(node)
+            else:
+                for node in node.children:
+                    if isinstance(node, nodes.row):
+                        rows.append(node)
+        return rows
 
     def visit_document(self, node):
         print(node)
@@ -21,50 +36,64 @@ class MarkdownTranslator(Translator):
         self.add((self.section_level + 1) * '#' + ' ')
 
     def visit_table(self, node):
-        self.table_depth = self.table_depth + 1
+        self.tables.append(node)
 
     def depart_table(self, node):
-        self.table_depth = self.table_depth - 1
+        self.tables.pop()
 
     def visit_thead(self, node):
-        if not self.table_depth:
+        if not len(self.tables):
             raise nodes.SkipNode
-        self.thead_depth = self.thead_depth + 1
+        self.theads.append(node)
 
     def depart_thead(self, node):
-        print('entries: ' + str(self.head_entries))
-        for i in range(self.head_entries):
-            self.add('| - ')
+        for i in range(len(self.row_entries)):
+            length = 0
+            for row in self.rows:
+                if len(row.children) > i:
+                    entry_length = len(row.children[i].astext())
+                    if entry_length > length:
+                        length = entry_length
+            self.add('| ' + ''.join(_.map(range(length), lambda: '-')) + ' ')
         self.add('|\n')
-        self.head_entries = 0
-        self.thead_depth = self.thead_depth - 1
+        self.row_entries = []
+        self.theads.pop()
 
     def visit_tbody(self, node):
-        if not self.table_depth:
+        if not len(self.tables):
             raise nodes.SkipNode
-        self.tbody_depth = self.tbody_depth + 1
+        self.tbodys.append(node)
 
     def depart_tbody(self, node):
-        self.tbody_depth = self.tbody_depth - 1
+        self.tbodys.pop()
 
     def visit_row(self, node):
-        if not self.thead_depth and not self.tbody_depth:
+        if not len(self.theads) and not len(self.tbodys):
             raise nodes.SkipNode
-        self.row_depth = self.row_depth + 1
+        self.rows.append(node)
 
     def depart_row(self, node):
         self.add('|\n')
-        self.row_depth = self.row_depth - 1
+        if not len(self.theads):
+            self.row_entries = []
+        self.rows.pop()
 
     def visit_entry(self, node):
-        if not self.row_depth:
+        if not len(self.rows):
             raise nodes.SkipNode
+        self.row_entries.append(node)
         self.add('| ')
-        if self.thead_depth:
-            self.head_entries = self.head_entries + 1
 
     def depart_entry(self, node):
-        self.add(' ')
+        length = 0
+        i = len(self.row_entries) - 1
+        for row in self.rows:
+            if len(row.children) > i:
+                entry_length = len(row.children[i].astext())
+                if entry_length > length:
+                    length = entry_length
+        padding = ''.join(_.map(range(length - len(node.astext())), lambda: ' '))
+        self.add(padding + ' ')
 
 class MarkdownWriter(Writer):
     translator_class = MarkdownTranslator
