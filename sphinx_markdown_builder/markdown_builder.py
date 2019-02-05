@@ -7,6 +7,9 @@ from sphinx.builders import Builder
 from sphinx.locale import __
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir, os_path
+import shutil
+import os
+
 
 if False:
     from typing import Any, Dict, Iterator, Set, Tuple
@@ -52,6 +55,52 @@ class MarkdownBuilder(Builder):
         return ''
 
     def prepare_writing(self, docnames):
+
+        # copy dependencies (images, references files)
+        print "copying dependencies..."
+        for (doc, deps) in self.env.dependencies.iteritems():
+            for dep in deps:
+                source = os.path.abspath(os.path.join(self.srcdir, dep))
+                target = os.path.abspath(os.path.join(self.outdir, dep))
+                target_dir = os.path.dirname(target)
+
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir)
+
+                if not os.path.exists(source):
+                    print "warning: cannot find resource %s referenced from %s" % (dep, doc)
+                else:
+                    if not os.path.exists(target):
+                        shutil.copy(source, target)
+
+        # calculate parents and grandparents
+        self.parents = {}
+        self.grandparents = {}
+
+        # figure out parents
+        for (parent, children) in self.env.toctree_includes.iteritems():
+            for child in children:
+                self.parents[child] = parent
+
+        custom_parents_str = self.env.config.overrides.get("md_parents")
+        if custom_parents_str:
+            # tk-multi-publish2=Toolkit App Reference&tk-framework-qtwidgets=Toolkit Framework Reference
+            for entry in custom_parents_str.split("&"):
+                (repo, parent) = entry.split("=")
+                rst_index_path = "{}/index".format(repo)
+                if parent == "/":
+                    # explicitly put this under the root
+                    # e.g. remove the parent
+                    if rst_index_path in self.parents:
+                        del self.parents[rst_index_path]
+                else:
+                    # use @ to denote an external reference to a page
+                    self.parents[rst_index_path] = "@{}".format(parent)
+
+        # figure out grandparents
+        for (docname, parent) in self.parents.iteritems():
+            self.grandparents[docname] = self.parents.get(parent)
+
         self.writer = MarkdownWriter(self)
 
     def write_doc(self, docname, doctree):
