@@ -309,7 +309,10 @@ class MarkdownTranslator(Translator):
         self.add('|\n')
         if not len(self.theads):
             self.row_entries = []
-        self.rows.pop()
+        try:
+            self.rows.pop()
+        except IndexError:
+            pass
 
     def visit_entry(self, node):
         if not len(self.rows):
