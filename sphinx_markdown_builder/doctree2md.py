@@ -422,7 +422,7 @@ class Translator(nodes.NodeVisitor):
         return ESCAPE_RE.sub(r'\\\1', txt)
 
     def visit_Text(self, node):
-        text = node.astext()
+        text = node.astext().replace('\r\n', '\n')
         if self._escape_text:
             text = self.escape_chars(text)
         self.add(text)
@@ -601,10 +601,7 @@ class Translator(nodes.NodeVisitor):
         url = self._refuri2http(node)
         if url is None:
             return
-        self.add('[')
-        for child in node.children:
-            child.walkabout(self)
-        self.add(']({})'.format(url))
+        self.add('[{0}]({1})'.format(node.astext(), url))
         raise nodes.SkipNode
 
     def depart_reference(self, node):
