@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from recommonmark.parser import MarkdownParser
+from sphinx_markdown_parser.parser import MarkdownParser
 
 author = 'Jam Risser'
 
@@ -14,7 +14,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx_js',
     'sphinx_markdown_builder',
-    'recommonmark',
+    'sphinx_markdown_parser'
 ]
 
 html_static_path = ['_static']
@@ -62,11 +62,10 @@ pygments_style = 'sphinx'
 
 release = '0.0.5'
 
-source_parsers = {
-    '.md': MarkdownParser
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown'
 }
-
-source_suffix = ['.rst', '.md']
 
 templates_path = ['_templates']
 
@@ -85,6 +84,8 @@ todo_include_todos = False
 version = '0.0.5'
 
 def setup(app):
+    app.add_source_suffix('.md', 'markdown')
+    app.add_source_parser(MarkdownParser)
     app.add_config_value('recommonmark_config', {
         'auto_toc_tree_section': 'Content',
         'enable_auto_doc_ref': True,

@@ -21,7 +21,7 @@ with open(path.join(here, 'requirements.txt'), 'r', encoding='utf-8') as f:
 setup(
     name='sphinx-markdown-builder',
 
-    version='0.4.1',
+    version='0.5.0',
 
     description='sphinx builder that outputs markdown files',
 
