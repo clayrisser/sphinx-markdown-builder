@@ -601,7 +601,10 @@ class Translator(nodes.NodeVisitor):
         url = self._refuri2http(node)
         if url is None:
             return
-        self.add('[{0}]({1})'.format(node.astext(), url))
+        self.add('[')
+        for child in node.children:
+            child.walkabout(self)
+        self.add(']({})'.format(url))
         raise nodes.SkipNode
 
     def depart_reference(self, node):
