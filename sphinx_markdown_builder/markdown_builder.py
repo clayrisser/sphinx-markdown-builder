@@ -8,11 +8,6 @@ from sphinx.locale import __
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir, os_path
 
-if False:
-    from typing import Any, Dict, Iterator, Set, Tuple
-    from docutils import nodes
-    from sphinx.application import Sphinx
-
 logger = logging.getLogger(__name__)
 
 class MarkdownBuilder(Builder):
