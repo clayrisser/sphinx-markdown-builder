@@ -1,22 +1,16 @@
 from codecs import open
 from os import path
 from setuptools import setup, find_packages
-from subprocess import check_output
 
 here = path.abspath(path.dirname(__file__))
 
-check_output(
-    'pandoc --from=markdown --to=rst --output=' + path.join(here, 'README.rst') + ' ' + path.join(here, 'README.md'),
-    shell=True
-)
-
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 install_requires = list()
 with open(path.join(here, 'requirements.txt'), 'r', encoding='utf-8') as f:
     for line in f.readlines():
-        install_requires.append(line)
+        install_requires.append(line.split("=")[0].strip("<~>"))
 
 setup(
     name='sphinx-markdown-builder',
@@ -26,6 +20,7 @@ setup(
     description='sphinx builder that outputs markdown files',
 
     long_description=long_description,
+    long_description_content_type="text/markdown",
 
     url='https://github.com/codejamninja/sphinx-markdown-builder',
 
@@ -44,9 +39,9 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
 
     keywords='sphinx docs documentation markdown',
