@@ -6,17 +6,21 @@ all: clean
 
 .PHONY: start
 start: env
-	@env/bin/python3 anydb $(ARGS)
+	@cd examples/javascript && \
+		make markdown
 
 .PHONY: install
 install: env
+	@cd examples/javascript && make install
 
 .PHONY: uninstall
 uninstall:
 	-@rm -rf env >/dev/null || true
+	@cd examples/javascript && make uninstall
 
 .PHONY: reinstall
 reinstall: uninstall install
+	@cd examples/javascript && make reinstall
 
 .PHONY: format
 format:
