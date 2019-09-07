@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 install_requires = list()
 with open(path.join(here, 'requirements.txt'), 'r', encoding='utf-8') as f:
     for line in f.readlines():
-        install_requires.append(line.split("=")[0].strip("<~>"))
+        install_requires.append(line.split('=')[0].strip('<~>'))
 
 setup(
     name='sphinx-markdown-builder',
@@ -20,7 +20,7 @@ setup(
     description='sphinx builder that outputs markdown files',
 
     long_description=long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type='text/markdown',
 
     url='https://github.com/codejamninja/sphinx-markdown-builder',
 
@@ -52,7 +52,7 @@ setup(
 
     include_package_data=True,
 
-    entry_points = {
+    entry_points={
         'sphinx.builders': [
             'markdown = sphinx_markdown_builder',
         ],

@@ -1,3 +1,5 @@
+import sys
+import os
 from .doctree2md import Translator, Writer
 from docutils import nodes
 from pydash import _
@@ -5,8 +7,6 @@ import html2text
 
 h = html2text.HTML2Text()
 
-import os
-import sys
 
 class MarkdownTranslator(Translator):
     row_entries = []
@@ -73,7 +73,7 @@ class MarkdownTranslator(Translator):
 
     def depart_desc_name(self, node):
         # name of the class/method
-        self.add("(")
+        self.add('(')
 
     def visit_desc_content(self, node):
         # the description of the class/method
@@ -85,11 +85,11 @@ class MarkdownTranslator(Translator):
 
     def visit_desc_signature(self, node):
         # the main signature of class/method
-        self.add("\n#### ")
+        self.add('\n#### ')
 
     def depart_desc_signature(self, node):
         # the main signature of class/method
-        self.add(")\n")
+        self.add(')\n')
 
     def visit_desc_parameterlist(self, node):
         # method/class ctor param list
@@ -107,7 +107,7 @@ class MarkdownTranslator(Translator):
         # single method/class ctr param
         # if there are additional params, include a comma
         if node.next_node(descend=False, siblings=True):
-            self.add(", ")
+            self.add(', ')
 
     # list of parameters/return values/exceptions
     #
@@ -123,29 +123,29 @@ class MarkdownTranslator(Translator):
         pass
 
     def visit_field(self, node):
-        self.add("\n")
+        self.add('\n')
 
     def depart_field(self, node):
-        self.add("\n")
+        self.add('\n')
 
     def visit_field_name(self, node):
         # field name, e.g 'returns', 'parameters'
-        self.add("* **")
+        self.add('* **')
 
     def depart_field_name(self, node):
-        self.add("**")
+        self.add('**')
 
     def visit_literal_strong(self, node):
-        self.add("**")
+        self.add('**')
 
     def depart_literal_strong(self, node):
-        self.add("**")
+        self.add('**')
 
     def visit_literal_emphasis(self, node):
-        self.add("*")
+        self.add('*')
 
     def depart_literal_emphasis(self, node):
-        self.add("*")
+        self.add('*')
 
     def visit_title_reference(self, node):
         pass
@@ -156,81 +156,61 @@ class MarkdownTranslator(Translator):
     def visit_versionmodified(self, node):
         # deprecation and compatibility messages
         # type will hold something like 'deprecated'
-        self.add("**%s:** " % node.attributes["type"].capitalize())
+        self.add('**%s:** ' % node.attributes['type'].capitalize())
 
     def depart_versionmodified(self, node):
         # deprecation and compatibility messages
         pass
 
     def visit_warning(self, node):
-        """
-        Sphinx warning directive
-        """
+        """Sphinx warning directive."""
         self.add('**WARNING**: ')
 
     def depart_warning(self, node):
-        """
-        Sphinx warning directive
-        """
+        """Sphinx warning directive."""
         pass
 
     def visit_note(self, node):
-        """
-        Sphinx note directive
-        """
+        """Sphinx note directive."""
         self.add('**NOTE**: ')
 
     def depart_note(self, node):
-        """
-        Sphinx note directive
-        """
+        """Sphinx note directive."""
         pass
 
     def visit_rubric(self, node):
-        """
-        Sphinx Rubric, a heading without relation to the document sectioning
-        http://docutils.sourceforge.net/docs/ref/rst/directives.html#rubric
-        """
-        self.add("### ")
+        """Sphinx Rubric, a heading without relation to the document sectioning
+        http://docutils.sourceforge.net/docs/ref/rst/directives.html#rubric."""
+        self.add('### ')
 
     def depart_rubric(self, node):
-        """
-        Sphinx Rubric, a heading without relation to the document sectioning
-        http://docutils.sourceforge.net/docs/ref/rst/directives.html#rubric
-        """
-        self.add("\n\n")
+        """Sphinx Rubric, a heading without relation to the document sectioning
+        http://docutils.sourceforge.net/docs/ref/rst/directives.html#rubric."""
+        self.add('\n\n')
 
     def visit_image(self, node):
-        """
-        Image directive
-        """
+        """Image directive."""
         uri = node.attributes['uri']
         doc_folder = os.path.dirname(self.builder.current_docname)
         if uri.startswith(doc_folder):
             # drop docname prefix
             uri = uri[len(doc_folder):]
-            if uri.startswith("/"):
-                uri = "." + uri
+            if uri.startswith('/'):
+                uri = '.' + uri
         self.add('\n\n![image](%s)\n\n' % uri)
 
     def depart_image(self, node):
-        """
-        Image directive
-        """
+        """Image directive."""
         pass
 
     def visit_autosummary_table(self, node):
-        """
-        Sphinx autosummary
-        See http://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
-        """
+        """Sphinx autosummary See http://www.sphinx-
+        doc.org/en/master/usage/extensions/autosummary.html."""
         pass
 
     def depart_autosummary_table(self, node):
-        """
-        Sphinx autosummary
-        See http://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html
-        """
+        """Sphinx autosummary See http://www.sphinx-
+        doc.org/en/master/usage/extensions/autosummary.html."""
         pass
 
     ################################################################################
@@ -328,8 +308,10 @@ class MarkdownTranslator(Translator):
                 entry_length = len(row.children[i].astext())
                 if entry_length > length:
                     length = entry_length
-        padding = ''.join(_.map(range(length - len(node.astext())), lambda: ' '))
+        padding = ''.join(
+            _.map(range(length - len(node.astext())), lambda: ' '))
         self.add(padding + ' ')
+
 
 class MarkdownWriter(Writer):
     translator_class = MarkdownTranslator

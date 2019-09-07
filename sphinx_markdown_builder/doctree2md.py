@@ -172,7 +172,7 @@ from collections import OrderedDict
 
 
 class IndentLevel(object):
-    """ Class to hold text being written for a certain indentation level
+    """Class to hold text being written for a certain indentation level.
 
     For example, all text in list_elements need to be indented.  A list_element
     creates one of these indentation levels, and all text contained in the
@@ -183,6 +183,7 @@ class IndentLevel(object):
 
     In most respects, IndentLevel behaves like a list.
     """
+
     def __init__(self, base, prefix, first_prefix=None):
         self.base = base  # The list to which we eventually write
         self.prefix = prefix  # Text prepended to lines
@@ -204,7 +205,7 @@ class IndentLevel(object):
         return len(self) != 0
 
     def write(self):
-        """ Add ``self.contents`` with current ``prefix`` and ``first_prefix``
+        """Add ``self.contents`` with current ``prefix`` and ``first_prefix``
 
         Add processed ``self.contents`` to ``self.base``.  The first line has
         ``first_prefix`` prepended, further lines have ``prefix`` prepended.
@@ -226,10 +227,10 @@ class IndentLevel(object):
 
 
 def _make_method(to_add):
-    """ Make a method that adds `to_add`
+    """Make a method that adds `to_add`
 
-    We need this function so that `to_add` is a fresh and unique variable at
-    the time the method is defined.
+    We need this function so that `to_add` is a fresh and unique
+    variable at the time the method is defined.
     """
 
     def method(self, node):
@@ -239,8 +240,7 @@ def _make_method(to_add):
 
 
 def add_pref_suff(pref_suff_map):
-    """ Decorator adds visit, depart methods for prefix/suffix pairs
-    """
+    """Decorator adds visit, depart methods for prefix/suffix pairs."""
     def dec(cls):
         # Need _make_method to ensure new variable picked up for each iteration
         # of the loop.  The defined method picks up this new variable in its
@@ -254,8 +254,8 @@ def add_pref_suff(pref_suff_map):
 
 
 def add_pass_thru(pass_thrus):
-    """ Decorator adds explicit pass-through visit and depart methods
-    """
+    """Decorator adds explicit pass-through visit and depart methods."""
+
     def meth(self, node):
         pass
 
@@ -278,10 +278,10 @@ ESCAPE_RE = re.compile(r'([\\*`])')
 # Doctree elements for which Markdown element is <prefix><content><suffix>
 PREF_SUFF_ELEMENTS = {
     'emphasis': ('*', '*'),   # Could also use ('_', '_')
-    'strong' : ('**', '**'),  # Could also use ('__', '__')
-    'literal' : ('`', '`'),
-    'subscript' : ('<sub>', '</sub>'),
-    'superscript' : ('<sup>', '</sup>'),
+    'strong': ('**', '**'),  # Could also use ('__', '__')
+    'literal': ('`', '`'),
+    'subscript': ('<sub>', '</sub>'),
+    'superscript': ('<sup>', '</sup>'),
 }
 
 # Doctree elements explicitly passed through without extra markup
@@ -301,7 +301,7 @@ PASS_THRU_ELEMENTS = ('document',
                       'compound',
                       'line',
                       'line_block',
-                     )
+                      )
 
 
 @add_pass_thru(PASS_THRU_ELEMENTS)
@@ -332,7 +332,7 @@ class Translator(nodes.NodeVisitor):
         self.head, self.body, self.foot = self._lists.values()
 
     def reset(self):
-        """ Initialize object for fresh read """
+        """Initialize object for fresh read."""
         for part in self._lists.values():
             part[:] = []
 
@@ -370,12 +370,12 @@ class Translator(nodes.NodeVisitor):
             out.append('\n')
 
     def get_current_output(self, section='body'):
-        """ Get list or IndentLevel to which we are currently writing """
+        """Get list or IndentLevel to which we are currently writing."""
         return (self.indent_levels[-1] if self.indent_levels
                 else self._lists[section])
 
     def add(self, string, section='body'):
-        """ Add `string` to `section` or current output
+        """Add `string` to `section` or current output.
 
         Parameters
         ----------
@@ -390,7 +390,7 @@ class Translator(nodes.NodeVisitor):
         self.get_current_output(section).append(string)
 
     def add_section(self, string, section='body'):
-        """ Add `string` to `section` regardless of current output
+        """Add `string` to `section` regardless of current output.
 
         Can be useful when forcing write to header or footer.
 
@@ -404,16 +404,14 @@ class Translator(nodes.NodeVisitor):
         self._lists[section].append(string)
 
     def start_level(self, prefix, first_prefix=None, section='body'):
-        """ Create a new IndentLevel with `prefix` and `first_prefix`
-        """
+        """Create a new IndentLevel with `prefix` and `first_prefix`"""
         base = (self.indent_levels[-1].content if self.indent_levels else
                 self._lists[section])
         level = IndentLevel(base, prefix, first_prefix)
         self.indent_levels.append(level)
 
     def finish_level(self):
-        """ Remove most recent IndentLevel and write contents
-        """
+        """Remove most recent IndentLevel and write contents."""
         level = self.indent_levels.pop()
         level.write()
 
@@ -443,8 +441,7 @@ class Translator(nodes.NodeVisitor):
         self._in_docinfo = False
 
     def process_docinfo_item(self, node):
-        """ Called explicitly from methods in this class
-        """
+        """Called explicitly from methods in this class."""
         self.add_section('% {}\n'.format(node.astext()), section='head')
         raise nodes.SkipNode
 
@@ -553,7 +550,7 @@ class Translator(nodes.NodeVisitor):
             # Level is too low to display
             raise nodes.SkipNode
         line = ', line %s' % node['line'] if node.hasattr('line') else ''
-        self.add("```\nSystem Message: {}:{}\n\n{}\n```\n\n".format(
+        self.add('```\nSystem Message: {}:{}\n\n{}\n```\n\n'.format(
             node['source'], line, node.astext()))
         raise nodes.SkipNode
 
@@ -661,7 +658,7 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def unknown_visit(self, node):
-        """ Warn once per instance for unsupported nodes
+        """Warn once per instance for unsupported nodes.
 
         Intercept docinfo items if in docinfo block.
         """
@@ -672,7 +669,7 @@ class Translator(nodes.NodeVisitor):
         node_type = node.__class__.__name__
         if node_type not in self._warned:
             self.document.reporter.warning('The ' + node_type +
-                ' element not yet supported in Markdown.')
+                                           ' element not yet supported in Markdown.')
             self._warned.add(node_type)
         raise nodes.SkipNode
 

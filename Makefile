@@ -18,15 +18,13 @@ uninstall:
 .PHONY: reinstall
 reinstall: uninstall install
 
+.PHONY: format
+format:
+	@env/bin/pyformat -i *.py sphinx_markdown_builder/*.py
+
 env:
 	@virtualenv env
 	@env/bin/pip3 install -r ./requirements.txt
-	@echo ::: ENV :::
-
-.PHONY: freeze
-freeze:
-	@env/bin/pip3 freeze > ./requirements.txt
-	@echo ::: FREEZE :::
 
 .PHONY: build
 build: dist
@@ -34,12 +32,10 @@ build: dist
 dist: clean install
 	@env/bin/python3 setup.py sdist
 	@env/bin/python3 setup.py bdist_wheel
-	@echo ran dist
 
 .PHONY: publish
 publish: dist
 	@twine upload dist/*
-	@echo published
 
 .PHONY: link
 link: install
@@ -51,6 +47,4 @@ unlink: install
 
 .PHONY: clean
 clean:
-	-@rm -rf */__pycache__ */*/__pycache__ README.rst dist build \
-		example/.tmp *.egg-info >/dev/null || true
-	@echo ::: CLEAN :::
+	@git clean -fXd -e \!env -e \!env/**/*

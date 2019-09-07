@@ -10,6 +10,7 @@ from sphinx.util.osutil import ensuredir, os_path
 
 logger = logging.getLogger(__name__)
 
+
 class MarkdownBuilder(Builder):
     name = 'markdown'
     format = 'markdown'
@@ -60,7 +61,7 @@ class MarkdownBuilder(Builder):
             with open(outfilename, 'w', encoding='utf-8') as f:  # type: ignore
                 f.write(self.writer.output)
         except (IOError, OSError) as err:
-            logger.warning(__("error writing file %s: %s"), outfilename, err)
+            logger.warning(__('error writing file %s: %s'), outfilename, err)
 
     def finish(self):
         pass
