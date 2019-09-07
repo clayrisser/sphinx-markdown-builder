@@ -20,7 +20,12 @@ reinstall: uninstall install
 
 .PHONY: format
 format:
-	@env/bin/pyformat -i *.py sphinx_markdown_builder/*.py
+	@env/bin/yapf -ir -vv \
+    $(CWD)/*.py \
+    $(CWD)/sphinx_markdown_builder
+	@env/bin/unify -ir \
+    $(CWD)/*.py \
+    $(CWD)/sphinx_markdown_builder
 
 env:
 	@virtualenv env

@@ -7,7 +7,6 @@ import html2text
 
 h = html2text.HTML2Text()
 
-
 class MarkdownTranslator(Translator):
     row_entries = []
     rows = []
@@ -309,9 +308,9 @@ class MarkdownTranslator(Translator):
                 if entry_length > length:
                     length = entry_length
         padding = ''.join(
-            _.map(range(length - len(node.astext())), lambda: ' '))
+            _.map(range(length - len(node.astext())), lambda: ' ')
+        )
         self.add(padding + ' ')
-
 
 class MarkdownWriter(Writer):
     translator_class = MarkdownTranslator

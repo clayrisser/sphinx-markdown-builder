@@ -10,7 +10,6 @@ from sphinx.util.osutil import ensuredir, os_path
 
 logger = logging.getLogger(__name__)
 
-
 class MarkdownBuilder(Builder):
     name = 'markdown'
     format = 'markdown'
@@ -55,7 +54,10 @@ class MarkdownBuilder(Builder):
         self.secnumbers = self.env.toc_secnumbers.get(docname, {})
         destination = StringOutput(encoding='utf-8')
         self.writer.write(doctree, destination)
-        outfilename = path.join(self.outdir, os_path(docname) + self.out_suffix)
+        outfilename = path.join(
+            self.outdir,
+            os_path(docname) + self.out_suffix
+        )
         ensuredir(path.dirname(outfilename))
         try:
             with open(outfilename, 'w', encoding='utf-8') as f:  # type: ignore

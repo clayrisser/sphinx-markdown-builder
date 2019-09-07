@@ -14,20 +14,13 @@ with open(path.join(here, 'requirements.txt'), 'r', encoding='utf-8') as f:
 
 setup(
     name='sphinx-markdown-builder',
-
     version='0.5.1',
-
     description='sphinx builder that outputs markdown files',
-
     long_description=long_description,
     long_description_content_type='text/markdown',
-
     url='https://github.com/codejamninja/sphinx-markdown-builder',
-
     author='Jam Risser',
-
     author_email='jam@codejam.ninja',
-
     license='MIT',
 
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -43,15 +36,10 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-
     keywords='sphinx docs documentation markdown',
-
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-
     install_requires=install_requires,
-
     include_package_data=True,
-
     entry_points={
         'sphinx.builders': [
             'markdown = sphinx_markdown_builder',
