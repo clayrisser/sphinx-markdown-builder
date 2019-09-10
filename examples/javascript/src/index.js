@@ -1,3 +1,6 @@
+/**
+ * main function
+ */
 async function main() {
   console.log('Hello, world!');
 }

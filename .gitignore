@@ -108,3 +108,4 @@ venv.bak/
 .tmp/
 README.rst
 *.deb
+.tern-port

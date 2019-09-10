@@ -1,6 +1,5 @@
-Sphinx==2.1.2
-docutils==0.14
-html2text==2018.1.9
-pydash==4.7.5
-unify==0.5
-yapf==0.28.0
+html2text>=2019.8.11
+pydash>=4.7.5
+sphinx>=2.2.0
+unify>=0.5
+yapf>=0.28.0

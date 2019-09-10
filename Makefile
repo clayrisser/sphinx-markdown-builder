@@ -57,3 +57,7 @@ unlink: install
 .PHONY: clean
 clean:
 	@git clean -fXd -e \!env -e \!env/**/*
+
+.PHONY: nuke
+nuke:
+	@git clean -fXd
