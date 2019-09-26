@@ -38,7 +38,7 @@ Load extension in configuration.
 #### Sphinx >= 1.8
 _conf.py_
 ```py
-from sphinx_markdown_parser.parser import MarkdownParser
+from sphinx_markdown_parser.markdown_builder import MarkdownBuilder
 
 source_suffix = {
     '.rst': 'restructuredtext',
@@ -53,12 +53,12 @@ def setup(app):
 #### Sphinx < 1.8
 _conf.py_
 ```py
-from sphinx_markdown_parser.parser import MarkdownParser
+from sphinx_markdown_parser.markdown_builder import MarkdownBuilder
 
 source_suffix = ['.rst', '.md']
 
 source_parsers = {
-    '.md': MarkdownParser
+    '.md': MarkdownBuilder
 }
 ```
 
