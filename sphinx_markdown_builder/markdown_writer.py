@@ -84,7 +84,11 @@ class MarkdownTranslator(Translator):
 
     def visit_desc_signature(self, node):
         # the main signature of class/method
-        self.add('\n#### ')
+        # We dont want methods to be at the same level as classes
+        if (node.attributes["class"]):
+            self.add('\n### ')
+        else:
+            self.add('\n#### ')
 
     def depart_desc_signature(self, node):
         # the main signature of class/method
