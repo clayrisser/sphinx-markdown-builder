@@ -170,9 +170,8 @@ __docformat__ = 'reStructuredText'
 from docutils import frontend, nodes, writers, languages
 from collections import OrderedDict
 
-
 class IndentLevel(object):
-    """ Class to hold text being written for a certain indentation level
+    """Class to hold text being written for a certain indentation level.
 
     For example, all text in list_elements need to be indented.  A list_element
     creates one of these indentation levels, and all text contained in the
@@ -204,7 +203,7 @@ class IndentLevel(object):
         return len(self) != 0
 
     def write(self):
-        """ Add ``self.contents`` with current ``prefix`` and ``first_prefix``
+        """Add ``self.contents`` with current ``prefix`` and ``first_prefix``
 
         Add processed ``self.contents`` to ``self.base``.  The first line has
         ``first_prefix`` prepended, further lines have ``prefix`` prepended.
@@ -224,23 +223,19 @@ class IndentLevel(object):
                 texts.append(self.prefix + line)
         self.base.append(''.join(texts))
 
-
 def _make_method(to_add):
-    """ Make a method that adds `to_add`
+    """Make a method that adds `to_add`
 
-    We need this function so that `to_add` is a fresh and unique variable at
-    the time the method is defined.
+    We need this function so that `to_add` is a fresh and unique
+    variable at the time the method is defined.
     """
-
     def method(self, node):
         self.add(to_add)
 
     return method
 
-
 def add_pref_suff(pref_suff_map):
-    """ Decorator adds visit, depart methods for prefix/suffix pairs
-    """
+    """Decorator adds visit, depart methods for prefix/suffix pairs."""
     def dec(cls):
         # Need _make_method to ensure new variable picked up for each iteration
         # of the loop.  The defined method picks up this new variable in its
@@ -252,10 +247,8 @@ def add_pref_suff(pref_suff_map):
 
     return dec
 
-
 def add_pass_thru(pass_thrus):
-    """ Decorator adds explicit pass-through visit and depart methods
-    """
+    """Decorator adds explicit pass-through visit and depart methods."""
     def meth(self, node):
         pass
 
@@ -264,45 +257,45 @@ def add_pass_thru(pass_thrus):
             for meth_prefix in ('visit_', 'depart_'):
                 meth_name = meth_prefix + element_name
                 if hasattr(cls, meth_name):
-                    raise ValueError('method name {} already defined'
-                                     .format(meth_name))
+                    raise ValueError(
+                        'method name {} already defined'.format(meth_name)
+                    )
                 setattr(cls, meth_name, meth)
         return cls
 
     return dec
-
 
 # Characters that should be escaped in Markdown
 ESCAPE_RE = re.compile(r'([\\*`])')
 
 # Doctree elements for which Markdown element is <prefix><content><suffix>
 PREF_SUFF_ELEMENTS = {
-    'emphasis': ('*', '*'),   # Could also use ('_', '_')
-    'strong' : ('**', '**'),  # Could also use ('__', '__')
-    'literal' : ('`', '`'),
-    'subscript' : ('<sub>', '</sub>'),
-    'superscript' : ('<sup>', '</sup>'),
+    'emphasis': ('*', '*'),  # Could also use ('_', '_')
+    'strong': ('**', '**'),  # Could also use ('__', '__')
+    'literal': ('`', '`'),
+    'subscript': ('<sub>', '</sub>'),
+    'superscript': ('<sup>', '</sup>'),
 }
 
 # Doctree elements explicitly passed through without extra markup
-PASS_THRU_ELEMENTS = ('document',
-                      'container',
-                      'target',
-                      'inline',
-                      'definition_list',
-                      'definition_list_item',
-                      'term',
-                      'field_list',
-                      'field_list_item',
-                      'field',
-                      'field_name',
-                      'mpl_hint',
-                      'pending_xref',
-                      'compound',
-                      'line',
-                      'line_block',
-                     )
-
+PASS_THRU_ELEMENTS = (
+    'document',
+    'container',
+    'target',
+    'inline',
+    'definition_list',
+    'definition_list_item',
+    'term',
+    'field_list',
+    'field_list_item',
+    'field',
+    'field_name',
+    'mpl_hint',
+    'pending_xref',
+    'compound',
+    'line',
+    'line_block',
+)
 
 @add_pass_thru(PASS_THRU_ELEMENTS)
 @add_pref_suff(PREF_SUFF_ELEMENTS)
@@ -318,21 +311,20 @@ class Translator(nodes.NodeVisitor):
         self.language = languages.get_language(lcode, document.reporter)
         # Not-None here indicates Markdown should use HTTP for internal and
         # download links.
-        self.markdown_http_base = (builder.markdown_http_base if builder
-                                   else None)
+        self.markdown_http_base = (
+            builder.markdown_http_base if builder else None
+        )
         # Warn only once per writer about unsupported elements
         self._warned = set()
         # Lookup table to get section list from name
-        self._lists = OrderedDict((('head', []),
-                                   ('body', []),
-                                   ('foot', [])))
+        self._lists = OrderedDict((('head', []), ('body', []), ('foot', [])))
         # Reset attributes modified by reading
         self.reset()
         # Attribute shortcuts
         self.head, self.body, self.foot = self._lists.values()
 
     def reset(self):
-        """ Initialize object for fresh read """
+        """Initialize object for fresh read."""
         for part in self._lists.values():
             part[:] = []
 
@@ -370,12 +362,14 @@ class Translator(nodes.NodeVisitor):
             out.append('\n')
 
     def get_current_output(self, section='body'):
-        """ Get list or IndentLevel to which we are currently writing """
-        return (self.indent_levels[-1] if self.indent_levels
-                else self._lists[section])
+        """Get list or IndentLevel to which we are currently writing."""
+        return (
+            self.indent_levels[-1]
+            if self.indent_levels else self._lists[section]
+        )
 
     def add(self, string, section='body'):
-        """ Add `string` to `section` or current output
+        """Add `string` to `section` or current output.
 
         Parameters
         ----------
@@ -390,7 +384,7 @@ class Translator(nodes.NodeVisitor):
         self.get_current_output(section).append(string)
 
     def add_section(self, string, section='body'):
-        """ Add `string` to `section` regardless of current output
+        """Add `string` to `section` regardless of current output.
 
         Can be useful when forcing write to header or footer.
 
@@ -404,16 +398,16 @@ class Translator(nodes.NodeVisitor):
         self._lists[section].append(string)
 
     def start_level(self, prefix, first_prefix=None, section='body'):
-        """ Create a new IndentLevel with `prefix` and `first_prefix`
-        """
-        base = (self.indent_levels[-1].content if self.indent_levels else
-                self._lists[section])
+        """Create a new IndentLevel with `prefix` and `first_prefix`"""
+        base = (
+            self.indent_levels[-1].content
+            if self.indent_levels else self._lists[section]
+        )
         level = IndentLevel(base, prefix, first_prefix)
         self.indent_levels.append(level)
 
     def finish_level(self):
-        """ Remove most recent IndentLevel and write contents
-        """
+        """Remove most recent IndentLevel and write contents."""
         level = self.indent_levels.pop()
         level.write()
 
@@ -443,8 +437,7 @@ class Translator(nodes.NodeVisitor):
         self._in_docinfo = False
 
     def process_docinfo_item(self, node):
-        """ Called explicitly from methods in this class
-        """
+        """Called explicitly from methods in this class."""
         self.add_section('% {}\n'.format(node.astext()), section='head')
         raise nodes.SkipNode
 
@@ -553,8 +546,11 @@ class Translator(nodes.NodeVisitor):
             # Level is too low to display
             raise nodes.SkipNode
         line = ', line %s' % node['line'] if node.hasattr('line') else ''
-        self.add("```\nSystem Message: {}:{}\n\n{}\n```\n\n".format(
-            node['source'], line, node.astext()))
+        self.add(
+            '```\nSystem Message: {}:{}\n\n{}\n```\n\n'.format(
+                node['source'], line, node.astext()
+            )
+        )
         raise nodes.SkipNode
 
     def visit_title(self, node):
@@ -642,8 +638,9 @@ class Translator(nodes.NodeVisitor):
         filename = node.get('filename')
         if None in (self.markdown_http_base, filename):
             return
-        target_url = '{}/_downloads/{}'.format(self.markdown_http_base,
-                                               filename)
+        target_url = '{}/_downloads/{}'.format(
+            self.markdown_http_base, filename
+        )
         self.add('[{}]({})'.format(node.astext(), target_url))
         raise nodes.SkipNode
 
@@ -661,7 +658,7 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def unknown_visit(self, node):
-        """ Warn once per instance for unsupported nodes
+        """Warn once per instance for unsupported nodes.
 
         Intercept docinfo items if in docinfo block.
         """
@@ -671,15 +668,15 @@ class Translator(nodes.NodeVisitor):
         # We really don't know this node type, warn once per node type
         node_type = node.__class__.__name__
         if node_type not in self._warned:
-            self.document.reporter.warning('The ' + node_type +
-                ' element not yet supported in Markdown.')
+            self.document.reporter.warning(
+                'The ' + node_type + ' element not yet supported in Markdown.'
+            )
             self._warned.add(node_type)
         raise nodes.SkipNode
 
-
 class Writer(writers.Writer):
 
-    supported = ('markdown',)
+    supported = ('markdown', )
     """Formats this writer supports."""
 
     output = None
@@ -687,16 +684,24 @@ class Writer(writers.Writer):
 
     # Add configuration settings for additional Markdown flavours here.
     settings_spec = (
-        'Markdown-Specific Options',
-        None,
-        (('Extended Markdown syntax.',
-          ['--extended-markdown'],
-          {'default': 0, 'action': 'store_true',
-           'validator': frontend.validate_boolean}),
-         ('Strict Markdown syntax. Default: true',
-          ['--strict-markdown'],
-          {'default': 1, 'action': 'store_true',
-           'validator': frontend.validate_boolean}),))
+        'Markdown-Specific Options', None, (
+            (
+                'Extended Markdown syntax.', ['--extended-markdown'], {
+                    'default': 0,
+                    'action': 'store_true',
+                    'validator': frontend.validate_boolean
+                }
+            ),
+            (
+                'Strict Markdown syntax. Default: true', ['--strict-markdown'],
+                {
+                    'default': 1,
+                    'action': 'store_true',
+                    'validator': frontend.validate_boolean
+                }
+            ),
+        )
+    )
 
     translator_class = Translator
 

@@ -84,7 +84,7 @@ celerybeat-schedule
 # Environments
 .env
 .venv
-env/
+env
 venv/
 ENV/
 env.bak/
@@ -108,3 +108,4 @@ venv.bak/
 .tmp/
 README.rst
 *.deb
+.tern-port

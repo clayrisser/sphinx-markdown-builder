@@ -54,13 +54,16 @@ class MarkdownBuilder(Builder):
         self.secnumbers = self.env.toc_secnumbers.get(docname, {})
         destination = StringOutput(encoding='utf-8')
         self.writer.write(doctree, destination)
-        outfilename = path.join(self.outdir, os_path(docname) + self.out_suffix)
+        outfilename = path.join(
+            self.outdir,
+            os_path(docname) + self.out_suffix
+        )
         ensuredir(path.dirname(outfilename))
         try:
             with open(outfilename, 'w', encoding='utf-8') as f:  # type: ignore
                 f.write(self.writer.output)
         except (IOError, OSError) as err:
-            logger.warning(__("error writing file %s: %s"), outfilename, err)
+            logger.warning(__('error writing file %s: %s'), outfilename, err)
 
     def finish(self):
         pass
