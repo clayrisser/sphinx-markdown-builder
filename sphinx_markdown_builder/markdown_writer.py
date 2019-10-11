@@ -68,6 +68,9 @@ class MarkdownTranslator(Translator):
 
     def visit_desc_name(self, node):
         # name of the class/method
+        # Escape "__" which is a formating string for markdown
+        if node.rawsource.startswith("__"):
+            self.add('\\')
         pass
 
     def depart_desc_name(self, node):
