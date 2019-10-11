@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2019-10-10
+### Added
+* complient requirements as per #33 #34
+### Fixed
+* MarkdownParser no longer exists #35
+* escaping '__' coming from python methods #37
+* classes and methods are not at the same title level #38
+
 ## [0.5.1] - 2019-06-28
 ### Added
 * links include subnode information
