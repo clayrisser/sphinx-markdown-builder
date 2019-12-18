@@ -14,6 +14,13 @@ Please ★ this repo if you found it useful ★ ★ ★
 If you want frontmatter support please use [sphinx-jekyll-builder](https://github.com/codejamninja/sphinx-jekyll-builder)
 
 
+## Built by Silicon Hills LLC
+
+[![index](https://user-images.githubusercontent.com/6234038/71054254-f284ad80-2116-11ea-9013-d68306726854.jpeg)](https://nuevesolutions.com)
+
+Silicon Hills offers premium Node and React develpoment and support services. Get in touch at [nuevesolutions.com](https://nuevesolutions.com).
+
+
 ## Recommended Projects
 
 * [sphinx-markdown-parser](https://github.com/codejamninja/sphinx-markdown-parser) - write markdown inside of docutils & sphinx projects
