@@ -45,45 +45,6 @@ pip3 install sphinx-markdown-builder
 
 ## Usage
 
-Load extension in configuration.
-
-#### Sphinx >= 1.8
-_conf.py_
-```py
-from sphinx_markdown_parser.markdown_builder import MarkdownBuilder
-
-source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown'
-}
-
-def setup(app):
-    app.add_source_suffix('.md', 'markdown')
-    app.add_source_parser(MarkdownParser)
-```
-
-#### Sphinx < 1.8
-_conf.py_
-```py
-from sphinx_markdown_parser.markdown_builder import MarkdownBuilder
-
-source_suffix = ['.rst', '.md']
-
-source_parsers = {
-    '.md': MarkdownBuilder
-}
-```
-
-If using [recommonmark](https://github.com/rtfd/recommonmark), make sure you
-explicitly ignore the build files as they will conflict with the system.
-
-_conf.py_
-```py
-exclude_patterns = [
-    'build/*'
-]
-```
-
 Build markdown files with Makefile
 
 ```sh
