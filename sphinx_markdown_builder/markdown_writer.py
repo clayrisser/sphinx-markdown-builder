@@ -16,7 +16,7 @@ class MarkdownTranslator(Translator):
     tables = []
     tbodys = []
     theads = []
-
+    
     def __init__(self, document, builder=None):
         Translator.__init__(self, document, builder=None)
         self.builder = builder
@@ -52,12 +52,12 @@ class MarkdownTranslator(Translator):
 
     def visit_desc_annotation(self, node):
         # annotation, e.g 'method', 'class'
-        pass
+        self.add('_')
 
     def depart_desc_annotation(self, node):
         # annotation, e.g 'method', 'class'
-        pass
-
+        self.get_current_output('body')[-1] = self.get_current_output('body')[-1][:-1]
+        self.add('_ ')
     def visit_desc_addname(self, node):
         # module preroll for class/method
         pass
