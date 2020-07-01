@@ -59,14 +59,14 @@ class MarkdownTranslator(Translator):
             self.add((self.section_level) * '#' + ' ')
 
     def visit_desc(self, node):
-        self.add('_')
+        pass
 
     def depart_desc(self, node):
         pass
 
     def visit_desc_annotation(self, node):
         # annotation, e.g 'method', 'class'
-        pass
+        self.add('_')
 
     def depart_desc_annotation(self, node):
         # annotation, e.g 'method', 'class'
