@@ -42,7 +42,21 @@ class MarkdownTranslator(Translator):
         pass
 
     def visit_title(self, node):
-        self.add((self.section_level) * '#' + ' ')
+        if self.section_level == 1:
+            # If no target possible, pass through.
+            pagetitle = ""
+            for child in node.children:
+                pagetitle += child.astext()
+            pageid = pagetitle.lower().replace(" ", "-").replace(":", "")
+            self.add(f"---\n"
+                     f"id: {pageid}\n"
+                     f"title: {pagetitle}\n"
+                     f"sidebar_label: {pagetitle}\n"
+                     f"---\n")
+            self.add("\n")
+            raise nodes.SkipNode
+        else:
+            self.add((self.section_level) * '#' + ' ')
 
     def visit_desc(self, node):
         pass
@@ -52,12 +66,12 @@ class MarkdownTranslator(Translator):
 
     def visit_desc_annotation(self, node):
         # annotation, e.g 'method', 'class'
-        self.add('_')
+        pass
 
     def depart_desc_annotation(self, node):
         # annotation, e.g 'method', 'class'
-        self.get_current_output('body')[-1] = self.get_current_output('body')[-1][:-1]
-        self.add('_ ')
+        pass
+
     def visit_desc_addname(self, node):
         # module preroll for class/method
         pass
@@ -172,19 +186,19 @@ class MarkdownTranslator(Translator):
 
     def visit_warning(self, node):
         """Sphinx warning directive."""
-        self.add('**WARNING**: ')
+        self.add(':::caution\n')
 
     def depart_warning(self, node):
         """Sphinx warning directive."""
-        pass
+        self.add(':::\n\n')
 
     def visit_note(self, node):
         """Sphinx note directive."""
-        self.add('**NOTE**: ')
+        self.add(':::note\n')
 
     def depart_note(self, node):
         """Sphinx note directive."""
-        pass
+        self.add(':::\n\n')
 
     def visit_rubric(self, node):
         """Sphinx Rubric, a heading without relation to the document sectioning

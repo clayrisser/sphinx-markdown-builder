@@ -491,8 +491,8 @@ class Translator(nodes.NodeVisitor):
     def visit_literal_block(self, node):
         self._escape_text = False
         code_type = node['classes'][1] if 'code' in node['classes'] else ''
-        if 'language' in node:
-            code_type = node['language']
+        if 'language' in node and node['language'] != "none":
+            code_type = node['language'] if node['language'] != "default" else "python"
         self.add('```' + code_type + '\n')
 
     def depart_literal_block(self, node):
@@ -507,7 +507,7 @@ class Translator(nodes.NodeVisitor):
     depart_doctest_block = depart_literal_block
 
     def visit_block_quote(self, node):
-        self.start_level('> ')
+        self.start_level('  ')
 
     def depart_block_quote(self, node):
         self.finish_level()
