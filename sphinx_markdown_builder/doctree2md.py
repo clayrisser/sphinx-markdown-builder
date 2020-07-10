@@ -579,7 +579,7 @@ class Translator(nodes.NodeVisitor):
             return url
         # If HTTP page build URL known, make link relative to that.
         if not self.markdown_http_base:
-            return None
+            return f'#{node.get("refid")}'
         this_doc = self.builder.current_docname
         if url in (None, ''):  # Reference to this doc
             url = self.builder.get_target_uri(this_doc)
