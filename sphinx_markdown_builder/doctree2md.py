@@ -301,7 +301,7 @@ PASS_THRU_ELEMENTS = (
 @add_pref_suff(PREF_SUFF_ELEMENTS)
 class Translator(nodes.NodeVisitor):
 
-    std_indent = '    '
+    std_indent = '  '
 
     def __init__(self, document, builder=None):
         nodes.NodeVisitor.__init__(self, document)
