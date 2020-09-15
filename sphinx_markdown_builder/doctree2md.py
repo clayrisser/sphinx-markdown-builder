@@ -710,6 +710,6 @@ class Writer(writers.Writer):
         self.builder = builder
 
     def translate(self):
-        visitor = self.translator_class(self.document, self.builder)
+        visitor = self.builder.create_translator(self.document, self.builder)
         self.document.walkabout(visitor)
         self.output = visitor.astext()
