@@ -1,12 +1,13 @@
+from docutils import nodes
+
 from .markdown_writer import MarkdownWriter, MarkdownTranslator
 from docutils.io import StringOutput
 from io import open
 from os import path
 from sphinx.builders import Builder
-from sphinx.builders import Builder
 from sphinx.locale import __
 from sphinx.util import logging
-from sphinx.util.osutil import ensuredir, os_path
+from sphinx.util.osutil import ensuredir, os_path, relative_uri
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +44,9 @@ class MarkdownBuilder(Builder):
             except EnvironmentError:
                 pass
 
-    def get_target_uri(self, docname, typ=None):
-        return ''
+    def get_target_uri(self, docname: str, typ=None):
+        # Returns the target markdown file name
+        return f"{docname}.md"
 
     def prepare_writing(self, docnames):
         self.writer = MarkdownWriter(self)
