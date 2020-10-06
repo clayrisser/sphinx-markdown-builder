@@ -1,5 +1,3 @@
-from docutils import nodes
-
 from .markdown_writer import MarkdownWriter, MarkdownTranslator
 from docutils.io import StringOutput
 from io import open
@@ -7,7 +5,7 @@ from os import path
 from sphinx.builders import Builder
 from sphinx.locale import __
 from sphinx.util import logging
-from sphinx.util.osutil import ensuredir, os_path, relative_uri
+from sphinx.util.osutil import ensuredir, os_path
 
 logger = logging.getLogger(__name__)
 
