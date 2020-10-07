@@ -43,3 +43,4 @@ node_modules
 # application
 /lib
 package-lock.json
+/yarn.lock
