@@ -295,6 +295,7 @@ PASS_THRU_ELEMENTS = (
     'compound',
     'line',
     'line_block',
+    'classifier'
 )
 
 @add_pass_thru(PASS_THRU_ELEMENTS)
@@ -710,6 +711,6 @@ class Writer(writers.Writer):
         self.builder = builder
 
     def translate(self):
-        visitor = self.builder.create_translator(self.document, self.builder)
+        visitor = self.translator_class(self.document, self.builder)
         self.document.walkabout(visitor)
         self.output = visitor.astext()

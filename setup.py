@@ -18,9 +18,9 @@ setup(
     description='sphinx builder that outputs markdown files',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/codejamninja/sphinx-markdown-builder',
-    author='Jam Risser',
-    author_email='jam@codejam.ninja',
+    url='https://github.com/WeiChe-Huang/sphinx-markdown-builder',
+    author='Andy Huang',
+    author_email='andy.huang@kneron.us',
     license='MIT',
 
     # https://pypi.python.org/pypi?%3Aaction=list_classifiers
