@@ -272,7 +272,6 @@ ESCAPE_RE = re.compile(r'([\\*`])')
 PREF_SUFF_ELEMENTS = {
     'emphasis': ('*', '*'),  # Could also use ('_', '_')
     'strong': ('**', '**'),  # Could also use ('__', '__')
-    'literal': ('`', '`'),
     'subscript': ('<sub>', '</sub>'),
     'superscript': ('<sup>', '</sup>'),
 }
@@ -488,6 +487,14 @@ class Translator(nodes.NodeVisitor):
         self._escape_text = True
         self.add('$')
 
+    def visit_literal(self, node):
+        self._escape_text = False
+        self.add('`')
+
+    def depart_literal(self, node):
+        self.add('`')
+        self._escape_text = True
+
     def visit_literal_block(self, node):
         self._escape_text = False
         code_type = node['classes'][1] if 'code' in node['classes'] else ''
@@ -574,22 +581,27 @@ class Translator(nodes.NodeVisitor):
     def _refuri2http(self, node):
         # Replace 'refuri' in reference with HTTP address, if possible
         # None for no possible address
-        url = node.get('refuri')
+        url = node.get('refuri') or ''
+
+        # Do not modify external URL in any way
         if not node.get('internal'):
             return url
+
         # If HTTP page build URL known, make link relative to that.
-        if not self.markdown_http_base:
-            return node.get("refuri")
-        this_doc = self.builder.current_docname
-        if url in (None, ''):  # Reference to this doc
-            url = self.builder.get_target_uri(this_doc)
-        else:  # URL is relative to the current docname.
-            this_dir = posixpath.dirname(this_doc)
-            if this_dir:
-                url = posixpath.normpath('{}/{}'.format(this_dir, url))
-        url = '{}/{}'.format(self.markdown_http_base, url)
+        if self.markdown_http_base:
+            this_doc = self.builder.current_docname
+            if url == '':  # Reference to this doc
+                url = self.builder.get_target_uri(this_doc)
+            else:  # URL is relative to the current docname.
+                this_dir = posixpath.dirname(this_doc)
+                if this_dir:
+                    url = posixpath.normpath('{}/{}'.format(this_dir, url))
+            url = '{}/{}'.format(self.markdown_http_base, url)
+
+        # Whatever the URL is, add the anchor to it
         if 'refid' in node:
             url += '#' + node['refid']
+
         return url
 
     def visit_reference(self, node):
