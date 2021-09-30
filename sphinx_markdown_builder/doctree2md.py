@@ -419,6 +419,10 @@ class Translator(nodes.NodeVisitor):
         text = node.astext().replace('\r\n', '\n')
         if self._escape_text:
             text = self.escape_chars(text)
+            
+        ### for muliline text, placed inside table cell rplace new line with HTML <BR>    
+        if isinstance(node.parent, nodes.paragraph) and isinstance(node.parent.parent, nodes.entry):    
+            text = node.astext().replace('\n', '<br>')    
         self.add(text)
 
     def depart_Text(self, node):
@@ -456,8 +460,10 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def depart_paragraph(self, node):
-        self.ensure_eol()
-        self.add('\n')
+        ## Inside table cell does not need to add line break
+        if type(node.parent) != nodes.entry:
+            self.ensure_eol()
+            self.add('\n')
 
     def visit_math_block(self, node):
         # docutils math block

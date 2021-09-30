@@ -254,6 +254,8 @@ class MarkdownTranslator(Translator):
         self.tables.append(node)
 
     def depart_table(self, node):
+        ##  Better readable when table and folowing text are devided by line
+        self.add('\n')
         self.tables.pop()
 
     def visit_tabular_col_spec(self, node):
