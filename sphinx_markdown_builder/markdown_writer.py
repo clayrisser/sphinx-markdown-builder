@@ -1,14 +1,28 @@
 from .depth import Depth
 from .doctree2md import Translator, Writer
-from docutils import nodes
-from pydash import _
+
 import html2text
 import os
 import sys
+import posixpath
+from typing import TYPE_CHECKING, Iterable, Tuple, cast
+from docutils import nodes
+from docutils.nodes import Element, Node, Text
+from pydash import _
+from sphinx.application import Sphinx
+from typing import cast
+from sphinx.util import logging, progress_message
+from sphinx.locale import __
+from sphinx.builders import Builder
+from sphinx.util.docutils import SphinxTranslator
 
 h = html2text.HTML2Text()
+logger = logging.getLogger(__name__)
+###
+#   this_doc = self.builder.current_docname
 
-class MarkdownTranslator(Translator):
+
+class MarkdownTranslator(SphinxTranslator,Translator):
     depth = Depth()
     enumerated_count = {}
     table_entries = []
@@ -17,9 +31,12 @@ class MarkdownTranslator(Translator):
     tbodys = []
     theads = []
     
-    def __init__(self, document, builder=None):
-        Translator.__init__(self, document, builder=None)
+    def __init__(self, document: nodes.document, builder: Builder) -> None:
+        super().__init__(document, builder)
         self.builder = builder
+        
+        self.numfig = self.config.numfig
+        self.numfig_format = self.config.numfig_format
 
     @property
     def rows(self):
@@ -35,6 +52,18 @@ class MarkdownTranslator(Translator):
                         rows.append(node)
         return rows
 
+
+    def _toParent (self, node, node_type, max_levels=10):
+        curNode = node
+        level = max_levels
+        while not isinstance(curNode, node_type) and level > 0 and curNode:
+            curNode = curNode.parent
+            --level
+        if level < 0:
+            curNode = None            
+        return curNode
+
+
     def visit_document(self, node):
         pass
 
@@ -42,7 +71,21 @@ class MarkdownTranslator(Translator):
         pass
 
     def visit_title(self, node):
-        self.add((self.section_level) * '#' + ' ')
+        print(">>>> VISIT TITLE", node)
+        #  Table title means table caption
+        if isinstance(node.parent,nodes.table):
+            self.add('*')
+            s=self.get_fignumber(node.parent)
+            self.add(s+ '. ')        
+        else:
+            self.add((self.section_level) * '#' + ' ')
+            
+    def depart_title(self, node):
+        if isinstance(node.parent,nodes.table):
+            self.add('*\n')    
+        else:
+            self.ensure_eol()
+            self.add('\n') 
 
     def visit_desc(self, node):
         pass
@@ -198,7 +241,17 @@ class MarkdownTranslator(Translator):
 
     def visit_image(self, node):
         """Image directive."""
-        uri = node.attributes['uri']
+        olduri = node['uri']
+        # rewrite the URI if the environment knows about it
+        if olduri in self.builder.images:
+            node['uri'] = posixpath.join(self.builder.imgpath,
+                                         self.builder.images[olduri])
+        uri = node['uri']
+        
+        print(">>>>> VISIT FIGURE:",node)
+        
+        
+        
         doc_folder = os.path.dirname(self.builder.current_docname)
         if uri.startswith(doc_folder):
             # drop docname prefix
@@ -209,6 +262,7 @@ class MarkdownTranslator(Translator):
 
     def depart_image(self, node):
         """Image directive."""
+        print(">>>>> DEPART FIGURE:",node)
         pass
 
     def visit_autosummary_table(self, node):
@@ -252,11 +306,18 @@ class MarkdownTranslator(Translator):
 
     def visit_table(self, node):
         self.tables.append(node)
+        self.table_rows=[]
+        self.table_entries=[]
+        # TO_DO:
+        for sig_id in node.get("ids", ()):
+            self.add('<a name="{}"></a>'.format(sig_id))
+        print(">>>> VISIT TABLE: ", node)
 
     def depart_table(self, node):
         ##  Better readable when table and folowing text are devided by line
         self.add('\n')
         self.tables.pop()
+        print(">>>> DEPART TABLE")
 
     def visit_tabular_col_spec(self, node):
         pass
@@ -280,19 +341,31 @@ class MarkdownTranslator(Translator):
         if not len(self.tables):
             raise nodes.SkipNode
         self.theads.append(node)
+        print(">>>>> VISIT THEAD :", node)
+        print(">>>>> theads : ", self.theads)
+
+
 
     def depart_thead(self, node):
-        for i in range(len(self.table_entries)):
-            length = 0
-            for row in self.table_rows:
-                if len(row.children) > i:
-                    entry_length = len(row.children[i].astext())
-                    if entry_length > length:
-                        length = entry_length
-            self.add('| ' + ''.join(_.map(range(length), lambda: '-')) + ' ')
+        # nList = node.parent.traverse()
+        for iNode in node.parent.traverse():
+            if isinstance(iNode, nodes.colspec):
+                w = cast(nodes.Element,iNode).get("colwidth")
+                self.add('| ' + ''.join(_.map(range(w), lambda: '-')) + ' ')
+        
+        # for i in range(len(self.table_entries)):
+        #     length = 0
+        #     for row in self.table_rows:
+        #         if len(row.children) > i:
+        #             entry_length = len(row.children[i].astext())
+        #             if entry_length > length:
+        #                 length = entry_length
+        #     self.add('| ' + ''.join(_.map(range(length), lambda: '-')) + ' ')
         self.add('|\n')
         self.table_entries = []
         self.theads.pop()
+        print(">>>>>> DEPART THEAD")
+        print(">>>>>> theads : ",self.theads)
 
     def visit_tbody(self, node):
         if not len(self.tables):
@@ -306,11 +379,15 @@ class MarkdownTranslator(Translator):
         if not len(self.theads) and not len(self.tbodys):
             raise nodes.SkipNode
         self.table_rows.append(node)
+        print(">>>>>> VISIT ROW : ",node)
+        print(">>>>>> row : ",self.table_rows)
 
     def depart_row(self, node):
         self.add('|\n')
         if not len(self.theads):
             self.table_entries = []
+        print(">>>>>> DEPART ROW : ")
+        print(">>>>>> row : ",self.table_rows)
 
     def visit_enumerated_list(self, node):
         self.depth.descend('list')
@@ -350,25 +427,112 @@ class MarkdownTranslator(Translator):
             raise nodes.SkipNode
         self.table_entries.append(node)
         self.add('| ')
+        print(">>>>>> VISIT ENTRY : ",node)
+        print(">>>>>> table_entries : ",self.table_entries)
 
     def depart_entry(self, node):
-        length = 0
-        i = len(self.table_entries) - 1
-        for row in self.table_rows:
-            if len(row.children) > i:
-                entry_length = len(row.children[i].astext())
-                if entry_length > length:
-                    length = entry_length
-        padding = ''.join(
-            _.map(range(length - len(node.astext())), lambda: ' ')
-        )
+        ###  On depart table entry, try to find columnn width specification from heade and calculate this colemn width
+        padding = ''
+        colSpecs = self._toParent(node,nodes.table).traverse(nodes.colspec)
+        # colSpecs = list(filter(lambda x: isinstance(x, nodes.colspec), self._toParent(node,nodes.table).traverse()))
+        pos = len(self.table_entries) - 1
+        if pos > len(colSpecs)-1:
+            logger.warning(__('Columns count out of range found headers. Got ',pos,'columns'))    
+        wspc = list(colSpecs)[pos].get("colwidth") - len(node.astext())
+        if wspc > 0:
+            padding = ''.join(_.map(range(wspc), lambda: ' '))
+                                                 
         self.add(padding + ' ')
+
 
     def descend(self, node_name):
         self.depth.descend(node_name)
 
     def ascend(self, node_name):
         self.depth.ascend(node_name)
+
+
+    # def visit_caption(self, node: Element):
+    #     if isinstance(node.parent, nodes.container) and node.parent.get('literal_block'):
+    #         self.body.append('<div class="code-block-caption">')
+    #     else:
+    #         super().visit_caption(node)
+    #     self.add_fignumber(node.parent)
+    #     self.body.append(self.starttag(node, 'span', '', CLASS='caption-text'))
+
+    # def depart_caption(self, node: Element) -> None:
+    #     self.body.append('</span>')
+
+    #     # append permalink if available
+    #     if isinstance(node.parent, nodes.container) and node.parent.get('literal_block'):
+    #         self.add_permalink_ref(node.parent, _('Permalink to this code'))
+    #     elif isinstance(node.parent, nodes.figure):
+    #         self.add_permalink_ref(node.parent, _('Permalink to this image'))
+    #     elif node.parent.get('toctree'):
+    #         self.add_permalink_ref(node.parent.parent, _('Permalink to this toctree'))
+
+    #     if isinstance(node.parent, nodes.container) and node.parent.get('literal_block'):
+    #         self.body.append('</div>\n')
+    #     else:
+    #         super().depart_caption(node)
+
+
+
+    def get_fignumber(self, node: Element):
+        figtype = self.builder.env.domains['std'].get_enumerable_node_type(node)
+        idList = node['ids']
+        if not figtype: 
+            return None
+        
+        if len(idList) == 0:
+            msg = __('Any IDs not assigned for %s node') % node.tagname
+            logger.warning(msg, location=node)
+            return None
+        
+        figure_id = node['ids'][0]
+        if figure_id in self.builder.fignumbers.get(figtype, {}):
+            prefix = self.config.numfig_format.get(figtype)
+            if prefix is None:
+                msg = __('numfig_format is not defined for %s') % figtype
+                logger.warning(msg)
+                return None
+            else:
+                strNumber  = '.'.join(map(str,self.builder.fignumbers[figtype][figure_id]))
+                
+        # print('Gen new number=%s' % strNumber, ", for tag ",figtype)        
+        logger.debug('Gen new number=%s' % strNumber, ", for tag ",figtype )
+        return prefix % strNumber          
+                     
+
+        
+        
+     
+    def add_secnumber(self, node: Element):
+        secnumber = self.get_secnumber(node)
+        
+        if secnumber:
+            print (">>>> ADD add_secnumber:", map(str, secnumber)) 
+
+
+    def get_secnumber(self, node: Element) -> Tuple[int, ...]:
+        if node.get('secnumber'):
+            return node['secnumber']
+        elif isinstance(node.parent, nodes.section):
+            if self.builder.name == 'singlehtml':
+                docname = self.docnames[-1]
+                anchorname = "%s/#%s" % (docname, node.parent['ids'][0])
+                if anchorname not in self.builder.secnumbers:
+                    anchorname = "%s/" % docname  # try first heading which has no anchor
+            else:
+                anchorname = '#' + node.parent['ids'][0]
+                if anchorname not in self.builder.secnumbers:
+                    anchorname = ''  # try first heading which has no anchor
+
+            if self.builder.secnumbers.get(anchorname):
+                return self.builder.secnumbers[anchorname]
+
+        return None
+
 
 class MarkdownWriter(Writer):
     translator_class = MarkdownTranslator
