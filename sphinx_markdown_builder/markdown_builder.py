@@ -16,6 +16,9 @@ from typing import IO, Any, Dict, Iterable, Iterator, List, Set, Tuple, Type
 logger = logging.getLogger(__name__)
 
 class MarkdownBuilder(Builder):
+    local_config_values: Dict[str, Tuple] = {
+        'md_insert_html': True
+    }    
     name = 'markdown'
     format = 'markdown'
     epilog = __('The markdown files are in %(outdir)s.')
@@ -29,12 +32,34 @@ class MarkdownBuilder(Builder):
                              'image/gif', 'image/jpeg']
     search = True  # for things like HTML help and Apple help: suppress search
     use_index = False
-
+    md_insert_html = True
+    # docnames = []
+    
+    def __init__(self, app: Sphinx):
+        super().__init__(app)
+        self.local_config = MarkdownBuilder.local_config_values.copy()
+        
+        
     def init(self):
         self.secnumbers = {}
         # basename of images directory
         self.imagedir = '_images'
+        self.md_insert_html = self.get_conf('md_insert_html',True)
+            
+        # Get config values
+        # self.md_insert_html = getattr(self.config, 'md_insert_html')
+        # self.md_insert_html = self.get_builder_config('md_insert_html',True)
         
+    def get_conf(self, varame: str, default):
+        retval = default
+        try:
+            retval = self.get_builder_config(varame,True)
+        except AttributeError:
+            retval = self.local_config[varame]    
+        if not retval:
+            return default   
+        return retval  
+
 
     def get_outdated_docs(self):
         for docname in self.env.found_docs:
@@ -64,6 +89,7 @@ class MarkdownBuilder(Builder):
 
     def prepare_writing(self, docnames):
         # create the search indexer
+        # self.docnames
         self.indexer = None
         if self.search:
             from sphinx.search import IndexBuilder
@@ -83,6 +109,9 @@ class MarkdownBuilder(Builder):
         self.current_docname = docname
         self.secnumbers = self.env.toc_secnumbers.get(docname, {})
         self.fignumbers = self.env.toc_fignumbers.get(docname, {})
+        print( ">>> WRITE_DOC docname=",docname,"\n    fignumbers=",self.fignumbers)
+        
+        
         destination = StringOutput(encoding='utf-8')
         
         self.writer.write(doctree, destination)
@@ -122,12 +151,12 @@ class MarkdownBuilder(Builder):
         self.finish_tasks.add_task(self.copy_image_files)
 
 
-def setup(app: Sphinx) -> Dict[str, Any]:
-    app.add_builder(MarkdownBuilder)
-    app.setup_extension('sphinx.builders.md')
+# def setup(app: Sphinx) -> Dict[str, Any]:
+#     app.add_builder(MarkdownBuilder)
+#     app.setup_extension('sphinx.builders.md')
 
-    return {
-        'version': 'builtin',
-        'parallel_read_safe': True,
-        'parallel_write_safe': True,
-    }
+#     return {
+#         'version': 'builtin',
+#         'parallel_read_safe': True,
+#         'parallel_write_safe': True,
+#     }

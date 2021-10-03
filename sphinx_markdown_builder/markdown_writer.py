@@ -5,7 +5,7 @@ import html2text
 import os
 import sys
 import posixpath
-from typing import TYPE_CHECKING, Iterable, Tuple, cast
+from typing import TYPE_CHECKING, Iterable, List, Tuple, cast
 from docutils import nodes
 from docutils.nodes import Element, Node, Text
 from pydash import _
@@ -16,6 +16,10 @@ from sphinx.locale import __
 from sphinx.builders import Builder
 from sphinx.util.docutils import SphinxTranslator
 
+if TYPE_CHECKING:
+    from .markdown_builder import MarkdownBuilder
+
+
 h = html2text.HTML2Text()
 logger = logging.getLogger(__name__)
 ###
@@ -23,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class MarkdownTranslator(SphinxTranslator,Translator):
+    builder: "MarkdownBuilder" = None
     depth = Depth()
     enumerated_count = {}
     table_entries = []
@@ -30,6 +35,7 @@ class MarkdownTranslator(SphinxTranslator,Translator):
     tables = []
     tbodys = []
     theads = []
+
     
     def __init__(self, document: nodes.document, builder: Builder) -> None:
         super().__init__(document, builder)
@@ -37,6 +43,7 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         
         self.numfig = self.config.numfig
         self.numfig_format = self.config.numfig_format
+        self.docnames = [self.builder.current_docname]
 
     @property
     def rows(self):
@@ -58,11 +65,17 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         level = max_levels
         while not isinstance(curNode, node_type) and level > 0 and curNode:
             curNode = curNode.parent
-            --level
+            level -= 1
         if level < 0:
             curNode = None            
         return curNode
 
+
+    def visit_start_of_file(self, node: Element):
+        self.docnames.append(node['docname'])
+
+    def depart_start_of_file(self, node: Element):
+        self.docnames.pop()
 
     def visit_document(self, node):
         pass
@@ -71,7 +84,7 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         pass
 
     def visit_title(self, node):
-        print(">>>> VISIT TITLE", node)
+        print(">>>> VISIT TITLE", node.parent)
         #  Table title means table caption
         if isinstance(node.parent,nodes.table):
             self.add('*')
@@ -248,10 +261,6 @@ class MarkdownTranslator(SphinxTranslator,Translator):
                                          self.builder.images[olduri])
         uri = node['uri']
         
-        print(">>>>> VISIT FIGURE:",node)
-        
-        
-        
         doc_folder = os.path.dirname(self.builder.current_docname)
         if uri.startswith(doc_folder):
             # drop docname prefix
@@ -262,7 +271,6 @@ class MarkdownTranslator(SphinxTranslator,Translator):
 
     def depart_image(self, node):
         """Image directive."""
-        print(">>>>> DEPART FIGURE:",node)
         pass
 
     def visit_autosummary_table(self, node):
@@ -364,8 +372,8 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         self.add('|\n')
         self.table_entries = []
         self.theads.pop()
-        print(">>>>>> DEPART THEAD")
-        print(">>>>>> theads : ",self.theads)
+        # print(">>>>>> DEPART THEAD")
+        # print(">>>>>> theads : ",self.theads)
 
     def visit_tbody(self, node):
         if not len(self.tables):
@@ -379,15 +387,15 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         if not len(self.theads) and not len(self.tbodys):
             raise nodes.SkipNode
         self.table_rows.append(node)
-        print(">>>>>> VISIT ROW : ",node)
-        print(">>>>>> row : ",self.table_rows)
+        # print(">>>>>> VISIT ROW : ",node)
+        # print(">>>>>> row : ",self.table_rows)
 
     def depart_row(self, node):
         self.add('|\n')
         if not len(self.theads):
             self.table_entries = []
-        print(">>>>>> DEPART ROW : ")
-        print(">>>>>> row : ",self.table_rows)
+        # print(">>>>>> DEPART ROW : ")
+        # print(">>>>>> row : ",self.table_rows)
 
     def visit_enumerated_list(self, node):
         self.depth.descend('list')
@@ -427,8 +435,8 @@ class MarkdownTranslator(SphinxTranslator,Translator):
             raise nodes.SkipNode
         self.table_entries.append(node)
         self.add('| ')
-        print(">>>>>> VISIT ENTRY : ",node)
-        print(">>>>>> table_entries : ",self.table_entries)
+        # print(">>>>>> VISIT ENTRY : ",node)
+        # print(">>>>>> table_entries : ",self.table_entries)
 
     def depart_entry(self, node):
         ###  On depart table entry, try to find columnn width specification from heade and calculate this colemn width
@@ -452,35 +460,54 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         self.depth.ascend(node_name)
 
 
-    # def visit_caption(self, node: Element):
-    #     if isinstance(node.parent, nodes.container) and node.parent.get('literal_block'):
-    #         self.body.append('<div class="code-block-caption">')
-    #     else:
-    #         super().visit_caption(node)
-    #     self.add_fignumber(node.parent)
-    #     self.body.append(self.starttag(node, 'span', '', CLASS='caption-text'))
+    def visit_caption(self, node: Element):
+        print(">>>> VISIT CAPTION ", node.parent)
+        if self.builder.md_insert_html:
+            self.add('<span class="caption">')
+        self.add('*'+self.get_fignumber(node.parent) + ' ')
 
-    # def depart_caption(self, node: Element) -> None:
-    #     self.body.append('</span>')
+    def depart_caption(self, node: Element):
+        self.add('*') 
+        if self.builder.md_insert_html:
+            self.add('</span>\n')
+   
+    
+    
+    def visit_figure(self, node: Element):
+        print(">>>> VISIT FIGURE ", node)
+        
+        if self.builder.md_insert_html:
+            self.add('<div class="figure" style="')
+            if node.get('width'):
+                self.add('width: %s;' % node['width'])
+            if node.get('align'):
+                self.add('align-%s;' % node['align'])
+            self.add('">\n')    
 
-    #     # append permalink if available
-    #     if isinstance(node.parent, nodes.container) and node.parent.get('literal_block'):
-    #         self.add_permalink_ref(node.parent, _('Permalink to this code'))
-    #     elif isinstance(node.parent, nodes.figure):
-    #         self.add_permalink_ref(node.parent, _('Permalink to this image'))
-    #     elif node.parent.get('toctree'):
-    #         self.add_permalink_ref(node.parent.parent, _('Permalink to this toctree'))
-
-    #     if isinstance(node.parent, nodes.container) and node.parent.get('literal_block'):
-    #         self.body.append('</div>\n')
-    #     else:
-    #         super().depart_caption(node)
-
-
+        # rewrite the URI if the environment knows about it
+        # olduri = node['uri']
+        # if olduri in self.builder.images:
+        #     node['uri'] = posixpath.join(self.builder.imgpath,
+        #                                  self.builder.images[olduri])
+        # uri = node['uri']
+        
+        # doc_folder = os.path.dirname(self.builder.current_docname)
+        # if uri.startswith(doc_folder):
+        #     # drop docname prefix
+        #     uri = uri[len(doc_folder):]
+        #     if uri.startswith('/'):
+        #         uri = '.' + uri
+        # self.add('\n\n![image](%s)\n\n' % uri)
+    
+    def depart_figure(self, node):
+        if self.builder.md_insert_html:
+            self.add('</div>\n')
 
     def get_fignumber(self, node: Element):
+        strNumber = ''
         figtype = self.builder.env.domains['std'].get_enumerable_node_type(node)
         idList = node['ids']
+
         if not figtype: 
             return None
         
@@ -490,6 +517,14 @@ class MarkdownTranslator(SphinxTranslator,Translator):
             return None
         
         figure_id = node['ids'][0]
+        
+        # print (">>>>GET FIGNUMBER figtype=",figtype,
+        #     "\n     idList=",idList,
+        #     "\n     figure_id=",figure_id,
+        #     "\n     fignumbers=",self.builder.fignumbers,
+        #     "\n     fignumbers2=",self.builder.fignumbers.get(figtype, {})
+        #     )
+        
         if figure_id in self.builder.fignumbers.get(figtype, {}):
             prefix = self.config.numfig_format.get(figtype)
             if prefix is None:
@@ -499,9 +534,13 @@ class MarkdownTranslator(SphinxTranslator,Translator):
             else:
                 strNumber  = '.'.join(map(str,self.builder.fignumbers[figtype][figure_id]))
                 
-        # print('Gen new number=%s' % strNumber, ", for tag ",figtype)        
-        logger.debug('Gen new number=%s' % strNumber, ", for tag ",figtype )
-        return prefix % strNumber          
+        # print('Gen new number=%s' % strNumber, ", for tag ",figtype)   
+        if  strNumber:
+            logger.debug('Gen new number=%s' % strNumber, ", for tag ",figtype )
+            return prefix % strNumber    
+        else:
+            logger.warn('File %s. Numfig not found id=%s, tag=%s' % (self.builder.current_docname,figure_id,figtype))
+            return ''      
                      
 
         
@@ -535,4 +574,11 @@ class MarkdownTranslator(SphinxTranslator,Translator):
 
 
 class MarkdownWriter(Writer):
+    # supported = ('md', 'markdown')
     translator_class = MarkdownTranslator
+
+    # def __init__(self, builder: "MarkdownBuilder"):
+    #     super().__init__()
+    #     self.builder = builder
+  
+        
