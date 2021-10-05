@@ -2,8 +2,10 @@ from .markdown_writer import MarkdownWriter, MarkdownTranslator
 from docutils.io import StringOutput
 from docutils import nodes
 from docutils.frontend import OptionParser
+from docutils.nodes import Node
 from io import open
 from os import path
+
 from sphinx.builders import Builder
 from sphinx.locale import __
 from sphinx.util import isurl, logging, md5, progress_message, status_iterator
@@ -12,122 +14,344 @@ from sphinx.application import Sphinx
 from sphinx.environment.adapters.asset import ImageAdapter
 from sphinx.util.osutil import copyfile, ensuredir, os_path, relative_uri
 from typing import IO, Any, Dict, Iterable, Iterator, List, Set, Tuple, Type
+from sphinx import addnodes
+from sphinx.util.docutils import new_document
+from sphinx.util.osutil import ensuredir
+from sphinx.util.console import darkgreen  # type: ignore
+from sphinx.util.nodes import inline_all_toctrees
+
+from sphinx.transforms.post_transforms import ReferencesResolver
+
+from docutils.nodes import Element
+from sphinx.transforms.post_transforms import SphinxPostTransform
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
+from sphinx.errors import NoUri
+
+
+
 
 logger = logging.getLogger(__name__)
 
 class MarkdownBuilder(Builder):
-    local_config_values: Dict[str, Tuple] = {
-        'md_insert_html': True
-    }    
     name = 'markdown'
     format = 'markdown'
     epilog = __('The markdown files are in %(outdir)s.')
     out_suffix = '.md'
-    allow_parallel = True
     default_translator_class = MarkdownTranslator
-    current_docname = None
-    markdown_http_base = 'https://localhost'
-    imgpath: str = None
+    
+    # current_docname = None
+    # markdown_http_base = 'https://localhost'
+    # imgpath: str = None
     supported_image_types = ['image/svg+xml', 'image/png',
                              'image/gif', 'image/jpeg']
-    search = True  # for things like HTML help and Apple help: suppress search
-    use_index = False
-    md_insert_html = True
+    # search = True  # for things like HTML help and Apple help: suppress search
+    # use_index = False
+
     # docnames = []
     
-    def __init__(self, app: Sphinx):
-        super().__init__(app)
-        self.local_config = MarkdownBuilder.local_config_values.copy()
+    # def __init__(self, app: Sphinx):
+    #     super().__init__(app)
+    #     # self.local_config = MarkdownBuilder.local_config_values.copy()
         
         
     def init(self):
-        self.secnumbers = {}
         # basename of images directory
         self.imagedir = '_images'
-        self.md_insert_html = self.get_conf('md_insert_html',True)
+        # self.md_insert_html = self.get_conf('md_insert_html',True)
+        self._doc_list = []
+        
+        self.md_insert_html = self.config.md_insert_html
             
         # Get config values
         # self.md_insert_html = getattr(self.config, 'md_insert_html')
         # self.md_insert_html = self.get_builder_config('md_insert_html',True)
         
-    def get_conf(self, varame: str, default):
-        retval = default
-        try:
-            retval = self.get_builder_config(varame,True)
-        except AttributeError:
-            retval = self.local_config[varame]    
-        if not retval:
-            return default   
-        return retval  
+    # def get_conf(self, varame: str, default):
+    #     retval = default
+    #     try:
+    #         retval = self.get_builder_config(varame,True)
+    #     except AttributeError:
+    #         retval = self.local_config[varame]    
+    #     if not retval:
+    #         return default   
+    #     return retval  
 
 
     def get_outdated_docs(self):
-        for docname in self.env.found_docs:
-            if docname not in self.env.all_docs:
-                yield docname
-                continue
-            targetname = path.join(self.outdir, docname + self.out_suffix)
-            try:
-                targetmtime = path.getmtime(targetname)
-            except Exception:
-                targetmtime = 0
-            try:
-                srcmtime = path.getmtime(self.env.doc2path(docname))
-                if srcmtime > targetmtime:
-                    yield docname
-            except EnvironmentError:
-                pass
-
+        # for docname in self.env.found_docs:
+        #     if docname not in self.env.all_docs:
+        #         yield docname
+        #         continue
+        #     targetname = path.join(self.outdir, docname + self.out_suffix)
+        #     try:
+        #         targetmtime = path.getmtime(targetname)
+        #     except Exception:
+        #         targetmtime = 0
+        #     try:
+        #         srcmtime = path.getmtime(self.env.doc2path(docname))
+        #         if srcmtime > targetmtime:
+        #             yield docname
+        #     except EnvironmentError:
+        #         pass
+        return 'pass'
+            
+            
     def get_target_uri(self, docname: str, typ=None):
         # Returns the target markdown file name
-        return f"{docname}.md"
-
-    # def get_target_uri(self, docname: str, typ: str = None) -> str:
-    #     return quote(docname) + self.link_suffix
-
-
-
-    def prepare_writing(self, docnames):
-        # create the search indexer
-        # self.docnames
-        self.indexer = None
-        if self.search:
-            from sphinx.search import IndexBuilder
-            lang = self.config.html_search_language or self.config.language
-            if not lang:
-                lang = 'en'
-            self.indexer = IndexBuilder(self.env, lang,
-                                        self.config.html_search_options,
-                                        self.config.html_search_scorer)
-
+        return {docname}       
+            
+    # def assemble_doctree(self, master, toctree_only):
+    #     tree = self.env.get_doctree(master)
+    #     if toctree_only:
+    #         doc = new_document('mdbuilder/builder.py')
+    #         for toctree in tree.traverse(addnodes.toctree):
+    #             # ids is not assigned to toctree, but to the parent
+    #             toctree.get('ids').extend(toctree.parent.get('ids'))
+    #             doc.append(toctree)
+    #         tree = doc
+    #     tree = inline_all_toctrees(self, set(), master, tree, darkgreen, [master])    
+    #     # tree = insert_all_toctrees(tree, self.env, [])
+    #     tree['docname'] = master
+    #     logger.info('')
+    #     logger.info('resolving references...', nonl=True)
+    #     print ("Apply post transforms ",self.app.registry.get_post_transforms())
+    #     self.env.resolve_references(tree, master, self)
+    #     # self.fix_refuris(tree)
+    #     print("\n>>>> PRINT TOCTREE ",tree )
         
-        self.writer = MarkdownWriter(self)
-        # self.docsettings: Any = OptionParser(defaults=self.env.settings,components=(self.docwriter,),read_config_files=True).get_default_values()
+        
+    #     # TODO: Support cross references
+    #     return tree
+    
+    
+    def assemble_doctree(self, master):
+        
+        TransClassList = self.app.registry.get_post_transforms()
+        print (">>>> ASEMBLE TOCTREE ",TransClassList)
+        if ReferencesResolver in TransClassList:
+            for i in range(len(TransClassList)):
+                if TransClassList[i]  == ReferencesResolver:
+                   TransClassList[i] =  ReferencesResolverNew
+                    # print  (">>>> ASEMBLE TOCTREE \n---------------\n")
+                    # print ("Found reference resolver ",TransClassList[i] )
+                    # print  ("\n---------------\n")
+        
+        
+        
+        
+        
+        # master = self.config.root_doc
+        tree = self.env.get_doctree(master)
+        tree = inline_all_toctrees(self, set(), master, tree, darkgreen, [master])
+        tree['docname'] = master
+        self.env.resolve_references(tree, master, self)
+        # self.fix_refuris(tree)
+        # print  (">>>> ASEMBLE TOCTREE \n---------------\n")
+        # print  (tree)
+        # print  ("\n---------------\n")
+        return tree
+    
+    
+    
+    
+    
+    
+    
+    
+    def fix_refuris(self, tree: Node):
+        # fix refuris with double anchor
+        fname = self.config.root_doc + self.out_suffix
+        for refnode in tree.traverse(nodes.reference):
+            if 'refuri' not in refnode:
+                continue
+            refuri = refnode['refuri']
+            hashindex = refuri.find('#')
+            if hashindex < 0:
+                continue
+            hashindex = refuri.find('#', hashindex + 1)
+            if hashindex >= 0:
+                refnode['refuri'] = fname + refuri[hashindex:]        
+            
+            
+            
+            
+            
+            
+            
+            
+    def make_numfig_map(self):
+        numfig_map = {}
+            
+        for docname, item in self.env.toc_fignumbers.items():
+            for figtype, info in item.items():
+                # prefix = self.config.numfig_format.get(figtype)
+                # if prefix is None:
+                #     continue
+                # _, num_map = numfig_map.setdefault(figtype, (prefix, {}))
+                num_map = numfig_map.setdefault(figtype,{})
+                for id, num in info.items():
+                    key = '%s/%s' % (docname, id)
+                    num_map[key] = num
+        return numfig_map
 
+    def make_numsec_map(self):
+        numsec_map = {}
+        for docname, info in self.env.toc_secnumbers.items():
+            for id, num in info.items():
+                key = '%s/%s' % (docname, id)
+                numsec_map[key] = num
+        return numsec_map       
+            
+            
+    def write(self, *ignored):
+        docnames = self.env.all_docs
 
+        logger.info('preparing documents... ', nonl=True)
+        self.prepare_writing(docnames)
+        logger.info('done')
+
+        for entry in self._doc_list:
+            start_doc, docname = entry[:2]
+            toctree_only = entry[2] if len(entry) > 3 else False
+
+            logger.info('processing %s... ' % docname, nonl=True)
+            # doctree = self.assemble_doctree(start_doc, toctree_only)
+            doctree = self.assemble_doctree(start_doc)
+            logger.info('')
+            logger.info('writing... ', nonl=True)
+            self.write_doc(docname, doctree)
+            logger.info('done')             
+            
+            
+    def prepare_writing(self, docnames):
+        for entry in self.config.md_documents:
+            if entry[0] not in self.env.all_docs:
+                logger.warning(
+                        'unknown document %s is found '
+                        'in md_documents' % entry[0])
+                continue
+            if not entry[1]:
+                logger.warning(
+                        'invalid filename %s s found for %s '
+                        'in md_documents' % (entry[1]. entry[0]))
+                continue
+            self._doc_list.append(entry)
+            
+        if not self._doc_list:
+            logger.warning('no valid entry is found in md_documents')
+            
+        self.secnumbers = self.make_numsec_map()
+        # self.fignumbers = self.make_numfig_map()   
+        # self.fignumbers = self.env.toc_fignumbers
+        self.fignumbers = self.env.toc_fignumbers.get("body", {})
+        # print (">>>>  CALL WRITE DOC  fignumbers",self.fignumbers)
+        
+        
+        # print(">>>> PREPARE WRITING documents list=",self._doc_list)
+        # self.fignumbers = self.env.toc_secnumbers.get(docname, {})  
+            
+        self.writer = MarkdownWriter(self)  
+        
+              
+    # def write_doctree(self, docname: str, doctree: nodes.document):
+    #     super().write_doctree(docname,doctree)
+    #     print (">>>> WRITE DOCTREE \n ------ doctree ------------------\n")
+    #     print (doctree)
+    #     print ("-------------------------- doctree ------------------\n")
+            
+            
     def write_doc(self, docname, doctree):
         self.current_docname = docname
-        self.secnumbers = self.env.toc_secnumbers.get(docname, {})
-        self.fignumbers = self.env.toc_fignumbers.get(docname, {})
-        print( ">>> WRITE_DOC docname=",docname,"\n    fignumbers=",self.fignumbers)
-        
-        
+        outfilename = path.join(self.outdir, docname)
+        ensuredir(path.dirname(outfilename))
         destination = StringOutput(encoding='utf-8')
-        
-        self.writer.write(doctree, destination)
-        outfilename = path.join(self.outdir,os_path(docname) + self.out_suffix)
+                
+        self.writer.write(doctree, destination)        
+
+        outfilename = path.join(self.outdir,os_path(docname))
         ensuredir(path.dirname(outfilename))
         
         try:
             with open(outfilename, 'w', encoding='utf-8') as f:  # type: ignore
                 f.write(self.writer.output)
         except (IOError, OSError) as err:
-            logger.warning(__('error writing file %s: %s'), outfilename, err)
+            logger.warning(__('error writing file %s: %s'), outfilename, err)           
+        
+        # Accomulate and check document used images
+        Builder.post_process_images(self, doctree)    
             
             
-    def write_doc_serialized(self, docname: str, doctree: nodes.document):
-        self.imgpath = relative_uri(self.get_target_uri(docname), self.imagedir)
-        self.post_process_images(doctree)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+
+
+    # def get_target_uri(self, docname: str, typ: str = None) -> str:
+    #     return quote(docname) + self.link_suffix
+
+
+
+
+
+
+
+
+
+
+    # def prepare_writing(self, docnames):
+    #     # create the search indexer
+    #     # self.docnames
+    #     self.indexer = None
+    #     if self.search:
+    #         from sphinx.search import IndexBuilder
+    #         lang = self.config.html_search_language or self.config.language
+    #         if not lang:
+    #             lang = 'en'
+    #         self.indexer = IndexBuilder(self.env, lang,
+    #                                     self.config.html_search_options,
+    #                                     self.config.html_search_scorer)
+
+        
+    #     self.writer = MarkdownWriter(self)
+    #     # self.docsettings: Any = OptionParser(defaults=self.env.settings,components=(self.docwriter,),read_config_files=True).get_default_values()
+
+
+    # def write_doc(self, docname, doctree):
+    #     self.current_docname = docname
+    #     self.secnumbers = self.env.toc_secnumbers.get(docname, {})
+    #     self.fignumbers = self.env.toc_fignumbers.get(docname, {})
+    #     print( ">>> WRITE_DOC docname=",docname,"\n    fignumbers=",self.fignumbers)
+        
+        
+    #     destination = StringOutput(encoding='utf-8')
+        
+    #     self.writer.write(doctree, destination)
+    #     outfilename = path.join(self.outdir,os_path(docname) + self.out_suffix)
+    #     ensuredir(path.dirname(outfilename))
+        
+    #     try:
+    #         with open(outfilename, 'w', encoding='utf-8') as f:  # type: ignore
+    #             f.write(self.writer.output)
+    #     except (IOError, OSError) as err:
+    #         logger.warning(__('error writing file %s: %s'), outfilename, err)
+            
+            
+    # def write_doc_serialized(self, docname: str, doctree: nodes.document):
+    #     self.imgpath = relative_uri(self.get_target_uri(docname), self.imagedir)
+    #     self.post_process_images(doctree)
+        
+        
+    # def post_process_images(self, doctree: Node):
+    #     if      
         
 
     def copy_image_files(self):
@@ -151,12 +375,298 @@ class MarkdownBuilder(Builder):
         self.finish_tasks.add_task(self.copy_image_files)
 
 
-# def setup(app: Sphinx) -> Dict[str, Any]:
-#     app.add_builder(MarkdownBuilder)
-#     app.setup_extension('sphinx.builders.md')
 
-#     return {
-#         'version': 'builtin',
-#         'parallel_read_safe': True,
-#         'parallel_write_safe': True,
-#     }
+### ?????
+def insert_all_toctrees(tree, env, traversed):
+    tree = tree.deepcopy()
+    for toctreenode in tree.traverse(addnodes.toctree):
+        nodeid = 'docx_expanded_toctree%d' % id(toctreenode)
+        newnodes = nodes.container(ids=[nodeid])
+        toctreenode['docx_expanded_toctree_refid'] = nodeid
+        includefiles = toctreenode['includefiles']
+        for includefile in includefiles:
+            if includefile in traversed:
+                continue
+            try:
+                traversed.append(includefile)
+                subtree = insert_all_toctrees(
+                        env.get_doctree(includefile), env, traversed)
+            except Exception:
+                continue
+            start_of_file = addnodes.start_of_file(docname=includefile)
+            start_of_file.children = subtree.children
+            newnodes.append(start_of_file)
+        parent = toctreenode.parent
+        index = parent.index(toctreenode)
+        parent.insert(index + 1, newnodes)
+    return tree
+
+
+
+##############################################################################################
+
+
+from sphinx.domains.std import StandardDomain
+from docutils.nodes import Element
+from sphinx.application import Sphinx
+from sphinx.builders import Builder
+from sphinx.environment import BuildEnvironment
+from sphinx.addnodes import desc_signature, pending_xref
+from typing import (Any, Callable, Dict, Iterable, Iterator, List, Optional,  Tuple, Type, Union, cast)
+
+# class StandardDomainNew(StandardDomain):
+
+
+
+def resolve_xref_new(self, env: "BuildEnvironment", fromdocname: str, builder: "Builder",
+                typ: str, target: str, node: pending_xref, contnode: Element ):
+
+
+    print (">>>> resolve_xref_new",
+        "\n    env= ",env,
+        "\n    fromdocname= ",fromdocname,
+        "\n    builder=",builder,
+        "\n    typ=",typ,
+        "\n    target=",target,
+        "\n    node=",node,
+        "\n    contnode=",contnode
+        )
+
+
+    if typ == 'ref':
+        resolver = self._resolve_ref_xref
+    elif typ == 'numref':
+        resolver = self._resolve_numref_xref
+    elif typ == 'keyword':
+        resolver = self._resolve_keyword_xref
+    elif typ == 'doc':
+        resolver = self._resolve_doc_xref
+    elif typ == 'option':
+        resolver = self._resolve_option_xref
+    elif typ == 'term':
+        resolver = self._resolve_term_xref
+    else:
+        resolver = self._resolve_obj_xref
+
+
+    return resolver(self, env, fromdocname, builder, typ, target, node, contnode)
+
+
+
+def _resolve_numref_xref_new(self, 
+                        env: "BuildEnvironment", 
+                        fromdocname: str,
+                        builder: "Builder", 
+                        typ: str, 
+                        target: str,
+                        node: pending_xref, 
+                        contnode: Element):
+
+    if target in self.labels:
+        docname, labelid, figname = self.labels.get(target, ('', '', ''))
+    else:
+        docname, labelid = self.anonlabels.get(target, ('', ''))
+        figname = None
+
+
+    print (">>>> resolve_xref_new",
+            "\n    labels= ",self.labels,
+            "\n"
+            )
+
+
+
+
+
+    if not docname:
+        return None
+
+    target_node = env.get_doctree(docname).ids.get(labelid)
+    figtype = self.get_enumerable_node_type(target_node)
+    if figtype is None:
+        return None
+
+    if figtype != 'section' and env.config.numfig is False:
+        logger.warning(__('numfig is disabled. :numref: is ignored.'), location=node)
+        return contnode
+
+    try:
+        
+        
+        print (">>>> resolve_xref_new",
+            "\n    env= ",env,
+            "\n    builder= ",builder,
+            "\n    figtype=",figtype,
+            "\n    docname=",docname,
+            "\n    target_node=",target_node
+            )
+        
+        
+        # fignumber = self.get_fignumber(env, builder, figtype, docname, target_node)
+        
+        
+        figure_id = target_node['ids'][0]
+        fignumber = env.toc_fignumbers[docname][figtype][figure_id]
+        
+        print (">>>> resolve_xref_new",
+            "\n    env= ",env,
+            "\n    builder= ",builder,
+            "\n    figtype=",figtype,
+            "\n    docname=",docname,
+            "\n    target_node=",target_node,
+            "\n    -----------",
+            "\n    figure_id=",figure_id,
+            "\n    fignumber=",fignumber
+            )
+                
+                
+        
+        
+        if fignumber is None:
+            return contnode
+    except ValueError:
+        logger.warning(__("Failed to create a cross reference. Any number is not "
+                            "assigned: %s"),
+                        labelid, location=node)
+        return contnode
+
+    try:
+        if node['refexplicit']:
+            title = contnode.astext()
+        else:
+            title = env.config.numfig_format.get(figtype, '')
+
+        if figname is None and '{name}' in title:
+            logger.warning(__('the link has no caption: %s'), title, location=node)
+            return contnode
+        else:
+            fignum = '.'.join(map(str, fignumber))
+            if '{name}' in title or 'number' in title:
+                # new style format (cf. "Fig.{number}")
+                if figname:
+                    newtitle = title.format(name=figname, number=fignum)
+                else:
+                    newtitle = title.format(number=fignum)
+            else:
+                # old style format (cf. "Fig.%s")
+                newtitle = title % fignum
+    except KeyError as exc:
+        logger.warning(__('invalid numfig_format: %s (%r)'), title, exc, location=node)
+        return contnode
+    except TypeError:
+        logger.warning(__('invalid numfig_format: %s'), title, location=node)
+        return contnode
+
+    return self.build_reference_node(fromdocname, builder,
+                                        docname, labelid, newtitle, 'numref',
+                                        nodeclass=addnodes.number_reference,
+                                        title=title)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##############################################################################################
+###
+###   For testing
+###
+from sphinx.addnodes import pending_xref
+from sphinx.util.nodes import find_pending_xref_condition, process_only_nodes
+
+class ReferencesResolverNew(SphinxPostTransform):
+
+    default_priority=9
+
+    
+    def run(self, **kwargs: Any):
+        for node in self.document.traverse(addnodes.pending_xref):
+            content = self.find_pending_xref_condition(node, ("resolved", "*"))
+
+            if content:
+                contnode = cast(Element, content[0].deepcopy())
+            else:
+                contnode = cast(Element, node[0].deepcopy())
+
+            print(">>>> RUN, content=",contnode,"\nnode=",node)
+
+            newnode = None
+
+            typ = node['reftype']
+            target = node['reftarget']
+            refdoc = node.get('refdoc', self.env.docname)
+            domain = None
+
+            try:
+                if 'refdomain' in node and node['refdomain']:
+                    # let the domain try to resolve the reference
+                    try:
+                        domain = self.env.domains[node['refdomain']]
+                    except KeyError as exc:
+                        raise NoUri(target, typ) from exc
+                    
+                    
+                    ###
+                    ###   Need change
+                    ###
+                    print (">>>> RUN",
+                        "\n    typ= ",typ,
+                        "\n    target= ",target,
+                        "\n    refdoc=",refdoc,
+                        "\n    contnode=",contnode
+                        )
+                    
+                    setattr(domain, '_resolve_numref_xref', _resolve_numref_xref_new)  
+                    setattr(domain, 'resolve_xref', resolve_xref_new) 
+                    
+                    newnode = domain.resolve_xref(domain, self.env, refdoc, self.app.builder, typ, target, node, contnode)
+                # really hardwired reference types
+                elif typ == 'any':
+                    newnode = self.resolve_anyref(refdoc, node, contnode)
+                # no new node found? try the missing-reference event
+                if newnode is None:
+                    newnode = self.app.emit_firstresult('missing-reference', self.env,
+                                                        node, contnode,
+                                                        allowed_exceptions=(NoUri,))
+                    # still not found? warn if node wishes to be warned about or
+                    # we are in nit-picky mode
+                    if newnode is None:
+                        self.warn_missing_reference(refdoc, typ, target, node, domain)
+            except NoUri:
+                newnode = None
+
+            if newnode:
+                newnodes: List[Node] = [newnode]
+            else:
+                newnodes = [contnode]
+                if newnode is None and isinstance(node[0], addnodes.pending_xref_condition):
+                    matched = self.find_pending_xref_condition(node, ("*",))
+                    if matched:
+                        newnodes = matched
+                    else:
+                        logger.warning(__('Could not determine the fallback text for the '
+                                          'cross-reference. Might be a bug.'), location=node)
+
+            node.replace_self(newnodes)
+
+
+    def find_pending_xref_condition(self, node: pending_xref, conditions: Sequence[str]
+                                    ):
+        for condition in conditions:
+            matched = find_pending_xref_condition(node, condition)
+            if matched:
+                return matched.children
+        else:
+            return None
+
+
+
+

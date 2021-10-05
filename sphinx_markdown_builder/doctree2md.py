@@ -460,10 +460,9 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def depart_paragraph(self, node):
-        ## Inside table cell does not need to add line break
-        if type(node.parent) != nodes.entry:
-            self.ensure_eol()
-            self.add('\n')
+        
+        self.ensure_eol()
+        self.add('\n')
 
     def visit_math_block(self, node):
         # docutils math block
