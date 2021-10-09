@@ -79,7 +79,7 @@ class MarkdownBuilder(Builder):
             
             
     def get_target_uri(self, docname: str, typ: str = None):
-        if docname not in self.docnames:
+        if docname not in self.env.all_docs:
             raise NoUri(docname, typ)
         else:
             return docname   + self.out_suffix
@@ -98,39 +98,7 @@ class MarkdownBuilder(Builder):
         
         self.env.resolve_references(tree, master, self)
         
-                
-    # def assemble_doctree(self, master, toctree_only):
-    #     tree = self.env.get_doctree(master)
-    #     if toctree_only:
-    #         doc = new_document('mdbuilder/builder.py')
-    #         for toctree in tree.traverse(addnodes.toctree):
-    #             # ids is not assigned to toctree, but to the parent
-    #             toctree.get('ids').extend(toctree.parent.get('ids'))
-    #             doc.append(toctree)
-    #         tree = doc
-    #     tree = inline_all_toctrees(self, set(), master, tree, darkgreen, [master])    
-    #     # tree = insert_all_toctrees(tree, self.env, [])
-    #     tree['docname'] = master
-    #     logger.info('')
-    #     logger.info('resolving references...', nonl=True)
-    #     print ("Apply post transforms ",self.app.registry.get_post_transforms())
-    #     self.env.resolve_references(tree, master, self)
-    #     # self.fix_refuris(tree)
-    #     print("\n>>>> PRINT TOCTREE ",tree )
-    
-    #     # TODO: Support cross references
-    #     return tree
-    
-    # def assemble_doctree(self, docname):
-    #     print (">>>> ASEMBLE DOCTREE ", docname)
-    #     tree = self.env.get_doctree(docname)
-    #     tree = inline_all_toctrees(self, set(), docname, tree, darkgreen, [docname])
-    #     tree['docname'] = docname
-    #     print("self.md_documents ",self.md_documents )
-    #     print (">>>> DOCTREE ", tree )
-    #     print (">>>> DOCTREE ----------------------------------------------------------------")
-    #     return tree
-
+  
     
     def fix_refuris(self, tree: Node):
         # fix refuris with double anchor
@@ -250,21 +218,7 @@ class MarkdownBuilder(Builder):
             self.write_doc(self.current_docname, doctree, out_docfile)
             # logger.info('done') 
  
-            
-            
-    # def prepare_writing(self, docnames):
-        # for entry in self.config.md_documents:
-        #     if entry[0] not in self.env.all_docs:
-        #         logger.warning('unknown document %s is found ' 'in md_documents' % entry[0])
-        #         continue
-        #     if not entry[1]:
-        #         logger.warning('invalid filename %s s found for %s ' 'in md_documents' % (entry[1]. entry[0]))
-        #         continue
-        #     self._doc_list.append(entry)
-            
-        # if not self._doc_list:
-        #     logger.warning('no valid entry is found in md_documents')
-        
+       
             
     def write_doc(self, docname, doctree,out_docfile):
         # self.current_docname = docname
@@ -303,80 +257,7 @@ class MarkdownBuilder(Builder):
         
         # Accomulate and check document used images
         Builder.post_process_images(self, doctree)    
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-
-
-
-    # def get_target_uri(self, docname: str, typ: str = None) -> str:
-    #     return quote(docname) + self.link_suffix
-
-
-
-
-
-
-
-
-
-
-    # def prepare_writing(self, docnames):
-    #     # create the search indexer
-    #     # self.docnames
-    #     self.indexer = None
-    #     if self.search:
-    #         from sphinx.search import IndexBuilder
-    #         lang = self.config.html_search_language or self.config.language
-    #         if not lang:
-    #             lang = 'en'
-    #         self.indexer = IndexBuilder(self.env, lang,
-    #                                     self.config.html_search_options,
-    #                                     self.config.html_search_scorer)
-
-        
-    #     self.writer = MarkdownWriter(self)
-    #     # self.docsettings: Any = OptionParser(defaults=self.env.settings,components=(self.docwriter,),read_config_files=True).get_default_values()
-
-
-    # def write_doc(self, docname, doctree):
-    #     self.current_docname = docname
-    #     self.secnumbers = self.env.toc_secnumbers.get(docname, {})
-    #     self.fignumbers = self.env.toc_fignumbers.get(docname, {})
-    #     print( ">>> WRITE_DOC docname=",docname,"\n    fignumbers=",self.fignumbers)
-        
-        
-    #     destination = StringOutput(encoding='utf-8')
-        
-    #     self.writer.write(doctree, destination)
-    #     outfilename = path.join(self.outdir,os_path(docname) + self.out_suffix)
-    #     ensuredir(path.dirname(outfilename))
-        
-    #     try:
-    #         with open(outfilename, 'w', encoding='utf-8') as f:  # type: ignore
-    #             f.write(self.writer.output)
-    #     except (IOError, OSError) as err:
-    #         logger.warning(__('error writing file %s: %s'), outfilename, err)
-            
-            
-    # def write_doc_serialized(self, docname: str, doctree: nodes.document):
-    #     self.imgpath = relative_uri(self.get_target_uri(docname), self.imagedir)
-    #     self.post_process_images(doctree)
-        
-        
-    # def post_process_images(self, doctree: Node):
-    #     if      
-        
+       
 
     def copy_image_files(self):
         if self.images:
@@ -400,30 +281,30 @@ class MarkdownBuilder(Builder):
 
 
 
-### ?????
-def insert_all_toctrees(tree, env, traversed):
-    tree = tree.deepcopy()
-    for toctreenode in tree.traverse(addnodes.toctree):
-        nodeid = 'docx_expanded_toctree%d' % id(toctreenode)
-        newnodes = nodes.container(ids=[nodeid])
-        toctreenode['docx_expanded_toctree_refid'] = nodeid
-        includefiles = toctreenode['includefiles']
-        for includefile in includefiles:
-            if includefile in traversed:
-                continue
-            try:
-                traversed.append(includefile)
-                subtree = insert_all_toctrees(
-                        env.get_doctree(includefile), env, traversed)
-            except Exception:
-                continue
-            start_of_file = addnodes.start_of_file(docname=includefile)
-            start_of_file.children = subtree.children
-            newnodes.append(start_of_file)
-        parent = toctreenode.parent
-        index = parent.index(toctreenode)
-        parent.insert(index + 1, newnodes)
-    return tree
+# ### ?????
+# def insert_all_toctrees(tree, env, traversed):
+#     tree = tree.deepcopy()
+#     for toctreenode in tree.traverse(addnodes.toctree):
+#         nodeid = 'docx_expanded_toctree%d' % id(toctreenode)
+#         newnodes = nodes.container(ids=[nodeid])
+#         toctreenode['docx_expanded_toctree_refid'] = nodeid
+#         includefiles = toctreenode['includefiles']
+#         for includefile in includefiles:
+#             if includefile in traversed:
+#                 continue
+#             try:
+#                 traversed.append(includefile)
+#                 subtree = insert_all_toctrees(
+#                         env.get_doctree(includefile), env, traversed)
+#             except Exception:
+#                 continue
+#             start_of_file = addnodes.start_of_file(docname=includefile)
+#             start_of_file.children = subtree.children
+#             newnodes.append(start_of_file)
+#         parent = toctreenode.parent
+#         index = parent.index(toctreenode)
+#         parent.insert(index + 1, newnodes)
+#     return tree
 
 
 
@@ -515,7 +396,7 @@ def _resolve_numref_xref_new(self,
     try:
         
         
-        print (">>>> _resolve_numref_xref_new",
+        print (">>>> _resolve_numref_xref_new 1",
             "\n    env= ",env,
             "\n    builder= ",builder,
             "\n    figtype=",figtype,
@@ -530,20 +411,22 @@ def _resolve_numref_xref_new(self,
         figure_id = target_node['ids'][0]
         fignumber = 'undef'
         
-        print (">>>> _resolve_numref_xref_new",
+        print (">>>> _resolve_numref_xref_new 2",
             "\n    -----------",              
             "\n    env.toc_fignumbers=",env.toc_fignumbers,
             "\n    figure_id=",figure_id,
+            "\n    labelid=",labelid,
             "\n    fignumber=",fignumber
             )
                 
                 
-        #  from self.get_fignumber(env, builder, figtype, docname, target_node)        
-        a = env.toc_fignumbers[docname]
-        
-        b = a[figtype]           
-        
-        fignumber = b[figure_id]
+        #  from self.get_fignumber(env, builder, figtype, docname, target_node) 
+        try:       
+            a = env.toc_fignumbers[docname]
+            b = a[figtype]           
+            fignumber = b[figure_id]
+        except:
+            pass    
         
         
         if fignumber is None:
