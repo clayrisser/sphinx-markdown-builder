@@ -99,7 +99,7 @@ class MarkdownBuilder(Builder):
         self.env.resolve_references(tree, master, self)
         
   
-    
+    ####   ??????
     def fix_refuris(self, tree: Node):
         # fix refuris with double anchor
         fname = self.config.root_doc + self.out_suffix
@@ -132,9 +132,9 @@ class MarkdownBuilder(Builder):
                     TransClassList[i] =  ReferencesResolverNew
         
         self.env.resolve_references(tree, master, self) 
-        self.fix_refuris(tree)
-        print (">>>> ASSWMBLE DOCTREE ", tree )
-        print (">>>> ASSWMBLE DOCTREE ----------------------------------------------------------------")
+        # self.fix_refuris(tree)
+        # print (">>>> ASSWMBLE DOCTREE ", tree )
+        # print (">>>> ASSWMBLE DOCTREE ----------------------------------------------------------------")
         return tree         
             
     def assemble_toc_secnumbers(self,master):
@@ -154,7 +154,7 @@ class MarkdownBuilder(Builder):
                 alias = "%s/%s" % (docname, id)
                 new_secnumbers[alias] = secnum
 
-        print (">>>> assemble_toc_secnumbers ", new_secnumbers)
+        # print (">>>> assemble_toc_secnumbers ", new_secnumbers)
         return new_secnumbers
         # return {master: new_secnumbers}
 
@@ -169,7 +169,7 @@ class MarkdownBuilder(Builder):
         #
         #       There are related codes in inline_all_toctres() and
         #       HTMLTranslter#add_fignumber().
-        print("ASSEMBLE TOC_FIGNUMBERS Source - self.env.toc_fignumbers",self.env.toc_fignumbers.items())
+        # print("ASSEMBLE TOC_FIGNUMBERS Source - self.env.toc_fignumbers",self.env.toc_fignumbers.items())
         
         new_fignumbers: Dict[str, Dict[str, Tuple[int, ...]]] = {}
         # {'foo': {'figure': {'id2': (2,), 'id1': (1,)}}, 'bar': {'figure': {'id1': (3,)}}}
@@ -180,7 +180,7 @@ class MarkdownBuilder(Builder):
                 for id, fignum in fignums.items():
                     new_fignumbers[alias][id] = fignum
                     
-        print (">>>> assemble_toc_fignumbers ", new_fignumbers)
+        # print (">>>> assemble_toc_fignumbers ", new_fignumbers)
         return new_fignumbers
         # return {master: new_fignumbers}
 
@@ -194,8 +194,8 @@ class MarkdownBuilder(Builder):
             toctree_only = entry[2] if len(entry) > 3 else False
 
             # logger.info('preparing documents... ', nonl=True)
-            print('>>>> DOC LIST ',  self.current_docname)
-            print('>>>> WRITE ------------------------------------------------------------------------------------ ')
+            # print('>>>> DOC LIST ',  self.current_docname)
+            # print('>>>> WRITE ------------------------------------------------------------------------------------ ')
             
             self.writer = MarkdownWriter(self)
             # self.prepare_writing(docnames)
@@ -206,7 +206,7 @@ class MarkdownBuilder(Builder):
             self.env.toc_fignumbers = self.assemble_toc_fignumbers(self.current_docname)
             # logger.info('done')
             # print(">>>> ASSEMBLE toc_secnumbers  ", self.env.toc_secnumbers )
-            # print(">>>> ASSEMBLE toc_fignumbers  ", self.env.toc_fignumbers )
+            print(">>>> ASSEMBLE toc_fignumbers  ", self.env.toc_fignumbers )
 
             # logger.info('processing %s... ' % out_docfile, nonl=True)
             # doctree = self.assemble_doctree(start_doc, toctree_only)
@@ -222,6 +222,9 @@ class MarkdownBuilder(Builder):
             
     def write_doc(self, docname, doctree,out_docfile):
         # self.current_docname = docname
+        print (">>>> WRITE DOC ---------------------------------------------------------\n",
+            doctree, 
+            "\n---------------------------------------------------------")
         
         self.resolve_ref(doctree, docname)
     
@@ -396,13 +399,13 @@ def _resolve_numref_xref_new(self,
     try:
         
         
-        print (">>>> _resolve_numref_xref_new 1",
-            "\n    env= ",env,
-            "\n    builder= ",builder,
-            "\n    figtype=",figtype,
-            "\n    docname=",docname,
-            "\n    target_node=",target_node
-            )
+        # print (">>>> _resolve_numref_xref_new 1",
+        #     "\n    env= ",env,
+        #     "\n    builder= ",builder,
+        #     "\n    figtype=",figtype,
+        #     "\n    docname=",docname,
+        #     "\n    target_node=",target_node
+        #     )
         
         
         # fignumber = self.get_fignumber(env, builder, figtype, docname, target_node)
@@ -411,13 +414,13 @@ def _resolve_numref_xref_new(self,
         figure_id = target_node['ids'][0]
         fignumber = 'undef'
         
-        print (">>>> _resolve_numref_xref_new 2",
-            "\n    -----------",              
-            "\n    env.toc_fignumbers=",env.toc_fignumbers,
-            "\n    figure_id=",figure_id,
-            "\n    labelid=",labelid,
-            "\n    fignumber=",fignumber
-            )
+        # print (">>>> _resolve_numref_xref_new 2",
+        #     "\n    -----------",              
+        #     "\n    env.toc_fignumbers=",env.toc_fignumbers,
+        #     "\n    figure_id=",figure_id,
+        #     "\n    labelid=",labelid,
+        #     "\n    fignumber=",fignumber
+        #     )
                 
                 
         #  from self.get_fignumber(env, builder, figtype, docname, target_node) 

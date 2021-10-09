@@ -98,47 +98,27 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         text = unicode(text)
         return text.translate(self.special_characters)
 
-    # def _get_numsec(self, ids):
-    #     for id in ids:
-    #         num = self.builder.secnumbers.get('%s/#%s' % (self._docname_stack[-1], id))
-    #         if num:
-    #             return '.'.join(map(str, num)) + ' '
-    #     else:
-    #         # First section of each file has no hash
-    #         num = self.builder.secnumbers.get('%s/' % self._docname_stack[-1], None)
-    #         if num:
-    #             return '.'.join(map(str, num)) + ' '
-    #     return None
-
-    # def _get_numfig(self, figtype, ids):
-    #     item = self._numfig_map.get(figtype)
-    #     if item is None:
-    #         return None
-    #     prefix, num_map = item
-    #     if prefix is None:
-    #         return None
-    #     for id in ids:
-    #         num = num_map.get('%s/%s' % (self._docname_stack[-1], id))
-    #         if num:
-    #             return prefix % ('.'.join(map(str, num)) + ' ')
-    #     return None
-
-
-
-
-
-
-
-
+   
+    def set_anchor(self,node):
+        if self.builder.md_insert_html and node and len(node['ids']) != 0:
+            for id in node['ids']:
+                self.add('<a name={}></a>'.format(id))
+            self.add('\n')
+        
+   
+   
+   
+    #####################################################################################
+    ##
+    ##    FILE, DOCUMENT, HEADERS PROCESSING
+    ##
+    #####################################################################################
 
 
     def visit_start_of_file(self, node: Element):
         self.docnames.append(node['docname'])
-        print (">>>>  VISIT FILE\n-------------------------------------------\n")
-        print(node)
-        print ("\n-------------------------------------------\n")
-        
-        
+
+            
     def depart_start_of_file(self, node: Element):
         self.docnames.pop()
 
@@ -147,6 +127,15 @@ class MarkdownTranslator(SphinxTranslator,Translator):
 
     def depart_document(self, node):
         pass
+
+
+    def visit_section(self, node):
+        # print(">>>> VISIT SECTION ",node)
+        self.set_anchor(node)
+        return super().visit_section(node)
+
+
+
 
     def visit_title(self, node):
         # print(">>>> VISIT TITLE", node.parent)
@@ -237,6 +226,17 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         # if there are additional params, include a comma
         if node.next_node(descend=False, siblings=True):
             self.add(', ')
+                   
+    #####################################################################################
+    ##
+    ##    SIMPLE TEXT TAGS
+    ##
+    #####################################################################################
+    def depart_paragraph(self, node):
+        ## Inside table cell does not need to add line break
+        if type(node.parent) != nodes.entry:
+            self.ensure_eol()
+            self.add('\n')        
 
     # list of parameters/return values/exceptions
     #
@@ -356,6 +356,8 @@ class MarkdownTranslator(SphinxTranslator,Translator):
     def visit_figure(self, node: Element):
         print(">>>> VISIT FIGURE ", node)
         
+        self.set_anchor(node)
+            
         if self.builder.md_insert_html:
             self.add('<div class="figure" style="')
             if node.get('width'):
@@ -410,16 +412,15 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         self.tables.append(node)
         self.table_rows=[]
         self.table_entries=[]
-        # TO_DO:
-        for sig_id in node.get("ids", ()):
-            self.add('<a name="{}"></a>'.format(sig_id))
-        print(">>>> VISIT TABLE: ", node)
+        
+        self.set_anchor(node)
+        # print(">>>> VISIT TABLE: ", node)
 
     def depart_table(self, node):
         ##  Better readable when table and folowing text are devided by line
         self.add('\n')
         self.tables.pop()
-        print(">>>> DEPART TABLE")
+        # print(">>>> DEPART TABLE")
 
     def visit_tabular_col_spec(self, node):
         pass
@@ -596,40 +597,39 @@ class MarkdownTranslator(SphinxTranslator,Translator):
     ###
     ################################################################################
     
-    # def _get_numsec(self, ids):
-    #     for id in ids:
-    #         num = self._numsec_map.get('%s/#%s' % (self._docname_stack[-1], id))
-    #         if num:
-    #             return '.'.join(map(str, num)) + ' '
-    #     else:
-    #         # First section of each file has no hash
-    #         num = self._numsec_map.get('%s/' % self._docname_stack[-1], None)
-    #         if num:
-    #             return '.'.join(map(str, num)) + ' '
-    #     return None
-
-    # def _get_numfig(self, figtype, ids):
-    #     item = self._numfig_map.get(figtype)
-    #     if item is None:
-    #         return None
-    #     prefix, num_map = item
-    #     if prefix is None:
-    #         return None
-    #     for id in ids:
-    #         num = num_map.get('%s/%s' % (self._docname_stack[-1], id))
-    #         if num:
-    #             return prefix % ('.'.join(map(str, num)) + ' ')
-    #     return None
-    
-
-    def visit_pending_xref(self, node: Element):
-        print (">>>>VISIT PENDING_XFER ", node)
-        pass    
+ 
+    # def visit_pending_xref(self, node: Element):
+    #     print (">>>>VISIT PENDING_XFER ", node)
+    #     pass    
     
     def visit_reference(self, node):
-        print (">>>>VISIT REFERENCE ", node)
+        if self.builder.md_insert_html:
+            target_uri = ''
+            if node['internal'] and node['refid']:
+                target_uri = "#" + node['refid']
+            elif node['refid']:    
+                print (">>>>VISIT REFERENCE - EXTERNAL ", node)
+                target_uri=node['refid']
+            self.add('<a href="{}">'.format(target_uri))
         super().visit_reference(node)
+ 
+        
+    def depart_reference(self, node): 
+        if self.builder.md_insert_html:
+            self.add('</a>')
+        super().depart_reference(node)
 
+           
+        
+        
+    # def visit_inline(self, node):
+    #     # self.add('<a>')
+    #     print (">>>>VISIT INLINE ", node)
+        
+
+    # def depart_inline(self, node):
+    #     print (">>>>DEPART INLINE ", node)
+    #     # self.add('</a>\n')
 
     ##  see add_fignumber sphinx/writer/html.py
     def get_fignumber(self, node: Element):
