@@ -62,6 +62,8 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         self.numfig = self.config.numfig
         self.numfig_format = self.config.numfig_format
         self.docnames = []
+        
+
 
     @property
     def rows(self):
@@ -95,6 +97,38 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         # @@@ A codec to do these and all other HTML entities would be nice.
         text = unicode(text)
         return text.translate(self.special_characters)
+
+    # def _get_numsec(self, ids):
+    #     for id in ids:
+    #         num = self.builder.secnumbers.get('%s/#%s' % (self._docname_stack[-1], id))
+    #         if num:
+    #             return '.'.join(map(str, num)) + ' '
+    #     else:
+    #         # First section of each file has no hash
+    #         num = self.builder.secnumbers.get('%s/' % self._docname_stack[-1], None)
+    #         if num:
+    #             return '.'.join(map(str, num)) + ' '
+    #     return None
+
+    # def _get_numfig(self, figtype, ids):
+    #     item = self._numfig_map.get(figtype)
+    #     if item is None:
+    #         return None
+    #     prefix, num_map = item
+    #     if prefix is None:
+    #         return None
+    #     for id in ids:
+    #         num = num_map.get('%s/%s' % (self._docname_stack[-1], id))
+    #         if num:
+    #             return prefix % ('.'.join(map(str, num)) + ' ')
+    #     return None
+
+
+
+
+
+
+
 
 
 
@@ -306,7 +340,7 @@ class MarkdownTranslator(SphinxTranslator,Translator):
                                          self.builder.images[olduri])
         uri = node['uri']
         
-        doc_folder = os.path.dirname(self.docnames[-1])
+        doc_folder = os.path.dirname(self.builder.current_docname)
         if uri.startswith(doc_folder):
             # drop docname prefix
             uri = uri[len(doc_folder):]
@@ -561,6 +595,32 @@ class MarkdownTranslator(SphinxTranslator,Translator):
     ###      LINKS and REFERENCE PROCESSING
     ###
     ################################################################################
+    
+    # def _get_numsec(self, ids):
+    #     for id in ids:
+    #         num = self._numsec_map.get('%s/#%s' % (self._docname_stack[-1], id))
+    #         if num:
+    #             return '.'.join(map(str, num)) + ' '
+    #     else:
+    #         # First section of each file has no hash
+    #         num = self._numsec_map.get('%s/' % self._docname_stack[-1], None)
+    #         if num:
+    #             return '.'.join(map(str, num)) + ' '
+    #     return None
+
+    # def _get_numfig(self, figtype, ids):
+    #     item = self._numfig_map.get(figtype)
+    #     if item is None:
+    #         return None
+    #     prefix, num_map = item
+    #     if prefix is None:
+    #         return None
+    #     for id in ids:
+    #         num = num_map.get('%s/%s' % (self._docname_stack[-1], id))
+    #         if num:
+    #             return prefix % ('.'.join(map(str, num)) + ' ')
+    #     return None
+    
 
     def visit_pending_xref(self, node: Element):
         print (">>>>VISIT PENDING_XFER ", node)
@@ -568,17 +628,23 @@ class MarkdownTranslator(SphinxTranslator,Translator):
     
     def visit_reference(self, node):
         print (">>>>VISIT REFERENCE ", node)
-        super.visit_reference(node)
+        super().visit_reference(node)
 
 
     ##  see add_fignumber sphinx/writer/html.py
     def get_fignumber(self, node: Element):
-        docname = self.docnames[-1]
+        docname = self.builder.current_docname
         strNumber = ''
         figtype = self.builder.env.domains['std'].get_enumerable_node_type(node)
+        figtype_key = '%s/%s' % (docname,figtype)
         idList = node['ids']
-
-        if not figtype: 
+        
+        #
+        #                              docname/figtype  {key=t1}
+        #   self.builder.fignumbers = {'body/table': {'t1': (1,)}, 'body/figure': {'id2': (1,)}}
+        #
+        
+        if not figtype_key: 
             return None
         
         if len(idList) == 0:
@@ -588,39 +654,41 @@ class MarkdownTranslator(SphinxTranslator,Translator):
         
         figure_id = node['ids'][0]
         
-        
-        # key = "%s/%s" % (docname,figure_id)
         key = figure_id
+        # key = '%s/%s' % (self.builder.current_docname, '%s/%s' % (docname,figure_id))
         
         ### figtype  - like 'table' or 'figure'
         ### figure_id  -  like id3
         ###
-        print (">>>>GET FIGNUMBER figtype=",figtype,
-            "\n     idList=",idList,
-            "\n     figure_id=",figure_id,
-            "\n     docname=",self.docnames[-1],
-            "\n     key=", key,
-            "\n     fignumbers=",self.builder.fignumbers,
-            "\n     all fignumbers2=",self.builder.env.toc_fignumbers
-            )
+        # print (">>>>GET FIGNUMBER figtype=",figtype,
+        #     "\n     idList=",idList,
+        #     "\n     figure_id=",figure_id,
+        #     "\n     docname=",self.builder.current_docname,
+        #     "\n     figtype_key=",figtype_key,
+        #     "\n     key=", key,
+        #     "\n     fignumbers=",self.builder.fignumbers,
+        #     "\n     all fignumbers2=",self.builder.env.toc_fignumbers
+        #     )
         
-
-        
-        if key in self.builder.fignumbers.get(figtype, {}):
+        if figure_id in self.builder.fignumbers.get(figtype_key):
+            # print('key was found in ', self.builder.fignumbers.get(figtype_key))
+            # print('Numfig format ', self.config.numfig_format)
             prefix = self.config.numfig_format.get(figtype)
+            # print('Get prefix', prefix)
             if prefix is None:
                 msg = __('numfig_format is not defined for %s') % figtype
                 logger.warning(msg)
                 return None
             else:
-                strNumber  = '.'.join(map(unicode,self.builder.fignumbers[figtype][key]))                
+                strNumber  = '.'.join(map(unicode,self.builder.fignumbers[figtype_key][key]))
+                # print('Get strNumber', strNumber)                
                 
-        print('Gen new number=%s, for tag "%s"' % (strNumber,figtype))   
+        # print('Gen new number=%s, for tag "%s"' % (key,figtype))   
         if  strNumber:
-            logger.debug('Gen new number=%s, for tag "%s"' % (strNumber,figtype))
-            return prefix % strNumber    
+            logger.debug('get_fignumber Return "%s"', prefix % strNumber )
+            return prefix % strNumber
         else:
-            logger.warn('Document "%s". Numfig not found id=%s, tag=%s' % (docname,figure_id,figtype))
+            logger.warn('Document "%s". Numfig not found id=%s, tag=%s' % (docname,key,figtype))
             return ''      
                      
      

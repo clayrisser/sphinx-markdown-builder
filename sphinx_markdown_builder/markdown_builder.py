@@ -27,9 +27,6 @@ from sphinx.transforms.post_transforms import SphinxPostTransform
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 from sphinx.errors import NoUri
 
-
-
-
 logger = logging.getLogger(__name__)
 
 class MarkdownBuilder(Builder):
@@ -46,13 +43,7 @@ class MarkdownBuilder(Builder):
                              'image/gif', 'image/jpeg']
     # search = True  # for things like HTML help and Apple help: suppress search
     # use_index = False
-
-    # docnames = []
-    
-    # def __init__(self, app: Sphinx):
-    #     super().__init__(app)
-    #     # self.local_config = MarkdownBuilder.local_config_values.copy()
-        
+    md_documents =[]
         
     def init(self):
         # basename of images directory
@@ -61,21 +52,12 @@ class MarkdownBuilder(Builder):
         self._doc_list = []
         
         self.md_insert_html = self.config.md_insert_html
-            
+        self.md_documents = self.config.md_documents
+        
         # Get config values
         # self.md_insert_html = getattr(self.config, 'md_insert_html')
         # self.md_insert_html = self.get_builder_config('md_insert_html',True)
         
-    # def get_conf(self, varame: str, default):
-    #     retval = default
-    #     try:
-    #         retval = self.get_builder_config(varame,True)
-    #     except AttributeError:
-    #         retval = self.local_config[varame]    
-    #     if not retval:
-    #         return default   
-    #     return retval  
-
 
     def get_outdated_docs(self):
         # for docname in self.env.found_docs:
@@ -96,10 +78,27 @@ class MarkdownBuilder(Builder):
         return 'pass'
             
             
-    def get_target_uri(self, docname: str, typ=None):
-        # Returns the target markdown file name
-        return {docname}       
+    def get_target_uri(self, docname: str, typ: str = None):
+        if docname not in self.docnames:
+            raise NoUri(docname, typ)
+        else:
+            return docname   + self.out_suffix
             
+            
+            
+    def resolve_ref(self, tree, master):
+        
+        # self.get_doctree(master)
+        
+        TransClassList = self.app.registry.get_post_transforms()
+        if ReferencesResolver in TransClassList:
+            for i in range(len(TransClassList)):
+                if TransClassList[i]  == ReferencesResolver:
+                    TransClassList[i] =  ReferencesResolverNew
+        
+        self.env.resolve_references(tree, master, self)
+        
+                
     # def assemble_doctree(self, master, toctree_only):
     #     tree = self.env.get_doctree(master)
     #     if toctree_only:
@@ -118,45 +117,20 @@ class MarkdownBuilder(Builder):
     #     self.env.resolve_references(tree, master, self)
     #     # self.fix_refuris(tree)
     #     print("\n>>>> PRINT TOCTREE ",tree )
-        
-        
+    
     #     # TODO: Support cross references
     #     return tree
     
-    
-    def assemble_doctree(self, master):
-        
-        TransClassList = self.app.registry.get_post_transforms()
-        print (">>>> ASEMBLE TOCTREE ",TransClassList)
-        if ReferencesResolver in TransClassList:
-            for i in range(len(TransClassList)):
-                if TransClassList[i]  == ReferencesResolver:
-                   TransClassList[i] =  ReferencesResolverNew
-                    # print  (">>>> ASEMBLE TOCTREE \n---------------\n")
-                    # print ("Found reference resolver ",TransClassList[i] )
-                    # print  ("\n---------------\n")
-        
-        
-        
-        
-        
-        # master = self.config.root_doc
-        tree = self.env.get_doctree(master)
-        tree = inline_all_toctrees(self, set(), master, tree, darkgreen, [master])
-        tree['docname'] = master
-        self.env.resolve_references(tree, master, self)
-        # self.fix_refuris(tree)
-        # print  (">>>> ASEMBLE TOCTREE \n---------------\n")
-        # print  (tree)
-        # print  ("\n---------------\n")
-        return tree
-    
-    
-    
-    
-    
-    
-    
+    # def assemble_doctree(self, docname):
+    #     print (">>>> ASEMBLE DOCTREE ", docname)
+    #     tree = self.env.get_doctree(docname)
+    #     tree = inline_all_toctrees(self, set(), docname, tree, darkgreen, [docname])
+    #     tree['docname'] = docname
+    #     print("self.md_documents ",self.md_documents )
+    #     print (">>>> DOCTREE ", tree )
+    #     print (">>>> DOCTREE ----------------------------------------------------------------")
+    #     return tree
+
     
     def fix_refuris(self, tree: Node):
         # fix refuris with double anchor
@@ -173,103 +147,153 @@ class MarkdownBuilder(Builder):
                 refnode['refuri'] = fname + refuri[hashindex:]        
             
             
+    def assemble_doctree(self,master):
+        #-> nodes.document:
+        #
+        # master = root_doc
+        tree = self.env.get_doctree(master)
+        tree = inline_all_toctrees(self, set(), master, tree, darkgreen, [master])
+        
+        tree['docname'] = master
+        # self.env.resolve_references(tree, master, self)
+        # self.resolve_ref(tree,master)
+        TransClassList = self.app.registry.get_post_transforms()
+        if ReferencesResolver in TransClassList:
+            for i in range(len(TransClassList)):
+                if TransClassList[i]  == ReferencesResolver:
+                    TransClassList[i] =  ReferencesResolverNew
+        
+        self.env.resolve_references(tree, master, self) 
+        self.fix_refuris(tree)
+        print (">>>> ASSWMBLE DOCTREE ", tree )
+        print (">>>> ASSWMBLE DOCTREE ----------------------------------------------------------------")
+        return tree         
             
-            
-            
-            
-            
-            
-    def make_numfig_map(self):
-        numfig_map = {}
-            
-        for docname, item in self.env.toc_fignumbers.items():
-            for figtype, info in item.items():
-                # prefix = self.config.numfig_format.get(figtype)
-                # if prefix is None:
-                #     continue
-                # _, num_map = numfig_map.setdefault(figtype, (prefix, {}))
-                num_map = numfig_map.setdefault(figtype,{})
-                for id, num in info.items():
-                    key = '%s/%s' % (docname, id)
-                    num_map[key] = num
-        return numfig_map
+    def assemble_toc_secnumbers(self,master):
+        # -> Dict[str, Dict[str, Tuple[int, ...]]]
+        # Assemble toc_secnumbers to resolve section numbers on SingleHTML.
+        # Merge all secnumbers to single secnumber.
+        #
+        # Note: current Sphinx has refid confliction in singlehtml mode.
+        #       To avoid the problem, it replaces key of secnumbers to
+        #       tuple of docname and refid.
+        #
+        #       There are related codes in inline_all_toctres() and
+        #       HTMLTranslter#add_secnumber().
+        new_secnumbers: Dict[str, Tuple[int, ...]] = {}
+        for docname, secnums in self.env.toc_secnumbers.items():
+            for id, secnum in secnums.items():
+                alias = "%s/%s" % (docname, id)
+                new_secnumbers[alias] = secnum
 
-    def make_numsec_map(self):
-        numsec_map = {}
-        for docname, info in self.env.toc_secnumbers.items():
-            for id, num in info.items():
-                key = '%s/%s' % (docname, id)
-                numsec_map[key] = num
-        return numsec_map       
+        print (">>>> assemble_toc_secnumbers ", new_secnumbers)
+        return new_secnumbers
+        # return {master: new_secnumbers}
+
+    def assemble_toc_fignumbers(self,master) :
+        #-> Dict[str, Dict[str, Dict[str, Tuple[int, ...]]]]
+        # Assemble toc_fignumbers to resolve figure numbers on SingleHTML.
+        # Merge all fignumbers to single fignumber.
+        #
+        # Note: current Sphinx has refid confliction in singlehtml mode.
+        #       To avoid the problem, it replaces key of secnumbers to
+        #       tuple of docname and refid.
+        #
+        #       There are related codes in inline_all_toctres() and
+        #       HTMLTranslter#add_fignumber().
+        print("ASSEMBLE TOC_FIGNUMBERS Source - self.env.toc_fignumbers",self.env.toc_fignumbers.items())
+        
+        new_fignumbers: Dict[str, Dict[str, Tuple[int, ...]]] = {}
+        # {'foo': {'figure': {'id2': (2,), 'id1': (1,)}}, 'bar': {'figure': {'id1': (3,)}}}
+        for docname, fignumlist in self.env.toc_fignumbers.items():
+            for figtype, fignums in fignumlist.items():
+                alias = "%s/%s" % (docname, figtype)
+                new_fignumbers.setdefault(alias, {})
+                for id, fignum in fignums.items():
+                    new_fignumbers[alias][id] = fignum
+                    
+        print (">>>> assemble_toc_fignumbers ", new_fignumbers)
+        return new_fignumbers
+        # return {master: new_fignumbers}
+
             
             
     def write(self, *ignored):
-        docnames = self.env.all_docs
+        # docnames = self.env.all_docs   !!!!!!!!!
 
-        logger.info('preparing documents... ', nonl=True)
-        self.prepare_writing(docnames)
-        logger.info('done')
-
-        for entry in self._doc_list:
-            start_doc, docname = entry[:2]
+        for entry in self.md_documents:
+            self.current_docname, out_docfile = entry[:2]
             toctree_only = entry[2] if len(entry) > 3 else False
 
-            logger.info('processing %s... ' % docname, nonl=True)
+            # logger.info('preparing documents... ', nonl=True)
+            print('>>>> DOC LIST ',  self.current_docname)
+            print('>>>> WRITE ------------------------------------------------------------------------------------ ')
+            
+            self.writer = MarkdownWriter(self)
+            # self.prepare_writing(docnames)
+            
+            ###  Prepare fignumbers and sec_numbers for all documents.
+            doctree = self.assemble_doctree(self.current_docname) 
+            self.env.toc_secnumbers = self.assemble_toc_secnumbers(self.current_docname)
+            self.env.toc_fignumbers = self.assemble_toc_fignumbers(self.current_docname)
+            # logger.info('done')
+            # print(">>>> ASSEMBLE toc_secnumbers  ", self.env.toc_secnumbers )
+            # print(">>>> ASSEMBLE toc_fignumbers  ", self.env.toc_fignumbers )
+
+            # logger.info('processing %s... ' % out_docfile, nonl=True)
             # doctree = self.assemble_doctree(start_doc, toctree_only)
-            doctree = self.assemble_doctree(start_doc)
-            logger.info('')
-            logger.info('writing... ', nonl=True)
-            self.write_doc(docname, doctree)
-            logger.info('done')             
+            # doctree = self.assemble_doctree(self.current_docname)
+            # logger.info('')
+            
+            # logger.info('writing... ', nonl=True)
+            # logger.info('writing... ', start_doc)
+            self.write_doc(self.current_docname, doctree, out_docfile)
+            # logger.info('done') 
+ 
             
             
-    def prepare_writing(self, docnames):
-        for entry in self.config.md_documents:
-            if entry[0] not in self.env.all_docs:
-                logger.warning(
-                        'unknown document %s is found '
-                        'in md_documents' % entry[0])
-                continue
-            if not entry[1]:
-                logger.warning(
-                        'invalid filename %s s found for %s '
-                        'in md_documents' % (entry[1]. entry[0]))
-                continue
-            self._doc_list.append(entry)
+    # def prepare_writing(self, docnames):
+        # for entry in self.config.md_documents:
+        #     if entry[0] not in self.env.all_docs:
+        #         logger.warning('unknown document %s is found ' 'in md_documents' % entry[0])
+        #         continue
+        #     if not entry[1]:
+        #         logger.warning('invalid filename %s s found for %s ' 'in md_documents' % (entry[1]. entry[0]))
+        #         continue
+        #     self._doc_list.append(entry)
             
-        if not self._doc_list:
-            logger.warning('no valid entry is found in md_documents')
-            
-        self.secnumbers = self.make_numsec_map()
-        # self.fignumbers = self.make_numfig_map()   
-        # self.fignumbers = self.env.toc_fignumbers
-        self.fignumbers = self.env.toc_fignumbers.get("body", {})
-        # print (">>>>  CALL WRITE DOC  fignumbers",self.fignumbers)
+        # if not self._doc_list:
+        #     logger.warning('no valid entry is found in md_documents')
         
+            
+    def write_doc(self, docname, doctree,out_docfile):
+        # self.current_docname = docname
         
-        # print(">>>> PREPARE WRITING documents list=",self._doc_list)
-        # self.fignumbers = self.env.toc_secnumbers.get(docname, {})  
-            
-        self.writer = MarkdownWriter(self)  
-        
-              
-    # def write_doctree(self, docname: str, doctree: nodes.document):
-    #     super().write_doctree(docname,doctree)
-    #     print (">>>> WRITE DOCTREE \n ------ doctree ------------------\n")
-    #     print (doctree)
-    #     print ("-------------------------- doctree ------------------\n")
-            
-            
-    def write_doc(self, docname, doctree):
-        self.current_docname = docname
-        outfilename = path.join(self.outdir, docname)
+        self.resolve_ref(doctree, docname)
+    
+        outfilename = path.join(self.outdir, out_docfile)
         ensuredir(path.dirname(outfilename))
         destination = StringOutput(encoding='utf-8')
                 
+        # self.secnumbers = self.env.toc_secnumbers.get(docname, {})
+        # self.fignumbers = self.env.toc_fignumbers.get(docname, {})
+        
+        self.secnumbers = self.env.toc_secnumbers
+        self.fignumbers = self.env.toc_fignumbers
+
+        # print(">>>> WRITE_DOC toc_secnumbers  ", self.secnumbers )
+        # print(">>>> WRITE_DOC toc_fignumbers  ", self.fignumbers )        
+    
+        # print (">>>> WRITE_DOC PREPARE secnumbers source (self.env.toc_secnumbers)", self.env.toc_fignumbers)
+        # print (">>>> WRITE_DOC PREPARE secnumbers", self.fignumbers)
+        
+        self.imgpath = relative_uri(docname, '_images')        
+                
         self.writer.write(doctree, destination)        
 
-        outfilename = path.join(self.outdir,os_path(docname))
-        ensuredir(path.dirname(outfilename))
+
+        # outfilename = path.join(self.outdir,os_path(self.get_target_uri(docname)))
+        # ensuredir(path.dirname(outfilename))
         
         try:
             with open(outfilename, 'w', encoding='utf-8') as f:  # type: ignore
@@ -422,15 +446,15 @@ def resolve_xref_new(self, env: "BuildEnvironment", fromdocname: str, builder: "
                 typ: str, target: str, node: pending_xref, contnode: Element ):
 
 
-    print (">>>> resolve_xref_new",
-        "\n    env= ",env,
-        "\n    fromdocname= ",fromdocname,
-        "\n    builder=",builder,
-        "\n    typ=",typ,
-        "\n    target=",target,
-        "\n    node=",node,
-        "\n    contnode=",contnode
-        )
+    # print (">>>> resolve_xref_new",
+    #     "\n    env= ",env,
+    #     "\n    fromdocname= ",fromdocname,
+    #     "\n    builder=",builder,
+    #     "\n    typ=",typ,
+    #     "\n    target=",target,
+    #     "\n    node=",node,
+    #     "\n    contnode=",contnode
+    #     )
 
 
     if typ == 'ref':
@@ -469,14 +493,12 @@ def _resolve_numref_xref_new(self,
         figname = None
 
 
-    print (">>>> resolve_xref_new",
+    print (">>>> _resolve_numref_xref_new",
             "\n    labels= ",self.labels,
-            "\n"
+            "\n    typ=",typ,
+            "\n    fromdocname=",fromdocname,
+            "\n    body=",docname,
             )
-
-
-
-
 
     if not docname:
         return None
@@ -493,7 +515,7 @@ def _resolve_numref_xref_new(self,
     try:
         
         
-        print (">>>> resolve_xref_new",
+        print (">>>> _resolve_numref_xref_new",
             "\n    env= ",env,
             "\n    builder= ",builder,
             "\n    figtype=",figtype,
@@ -506,20 +528,22 @@ def _resolve_numref_xref_new(self,
         
         
         figure_id = target_node['ids'][0]
-        fignumber = env.toc_fignumbers[docname][figtype][figure_id]
+        fignumber = 'undef'
         
-        print (">>>> resolve_xref_new",
-            "\n    env= ",env,
-            "\n    builder= ",builder,
-            "\n    figtype=",figtype,
-            "\n    docname=",docname,
-            "\n    target_node=",target_node,
-            "\n    -----------",
+        print (">>>> _resolve_numref_xref_new",
+            "\n    -----------",              
+            "\n    env.toc_fignumbers=",env.toc_fignumbers,
             "\n    figure_id=",figure_id,
             "\n    fignumber=",fignumber
             )
                 
                 
+        #  from self.get_fignumber(env, builder, figtype, docname, target_node)        
+        a = env.toc_fignumbers[docname]
+        
+        b = a[figtype]           
+        
+        fignumber = b[figure_id]
         
         
         if fignumber is None:
@@ -564,17 +588,6 @@ def _resolve_numref_xref_new(self,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 ##############################################################################################
 ###
 ###   For testing
@@ -582,10 +595,19 @@ def _resolve_numref_xref_new(self,
 from sphinx.addnodes import pending_xref
 from sphinx.util.nodes import find_pending_xref_condition, process_only_nodes
 
-class ReferencesResolverNew(SphinxPostTransform):
+class ReferencesResolverNew(ReferencesResolver):
 
     default_priority=9
 
+    def find_pending_xref_condition(self, node: pending_xref, conditions: Sequence[str]):
+        for condition in conditions:
+            matched = find_pending_xref_condition(node, condition)
+            if matched:
+                return matched.children
+        else:
+            return None
+
+    
     
     def run(self, **kwargs: Any):
         for node in self.document.traverse(addnodes.pending_xref):
@@ -658,14 +680,7 @@ class ReferencesResolverNew(SphinxPostTransform):
             node.replace_self(newnodes)
 
 
-    def find_pending_xref_condition(self, node: pending_xref, conditions: Sequence[str]
-                                    ):
-        for condition in conditions:
-            matched = find_pending_xref_condition(node, condition)
-            if matched:
-                return matched.children
-        else:
-            return None
+
 
 
 

@@ -6,7 +6,7 @@ def setup(app):
     def default_md_documents(conf):
         start_doc = conf.master_doc
         filename = '%s.md' % make_filename(conf.project)
-        toc_only = False
+        toc_only = True
         return [(start_doc, filename, toc_only)]
     
     app.add_config_value('md_documents', default_md_documents, 'env') 
