@@ -102,7 +102,7 @@ class MarkdownTranslator(SphinxTranslator,Translator):
     def set_anchor(self,node):
         if self.builder.md_insert_html and node and len(node['ids']) != 0:
             for id in node['ids']:
-                self.add('<a name={}></a>'.format(id))
+                self.add('<a name="{}"></a>'.format(id))
             self.add('\n')
         
    
@@ -286,6 +286,7 @@ class MarkdownTranslator(SphinxTranslator,Translator):
 
     def visit_literal(self, node):
         print (">>>> VISIT LITERAL", node)
+        super().visit_literal(node)
         pass
 
 
@@ -334,6 +335,7 @@ class MarkdownTranslator(SphinxTranslator,Translator):
     def visit_image(self, node):
         """Image directive."""
         olduri = node['uri']
+        
         # rewrite the URI if the environment knows about it
         if olduri in self.builder.images:
             node['uri'] = posixpath.join(self.builder.imgpath,
@@ -364,7 +366,7 @@ class MarkdownTranslator(SphinxTranslator,Translator):
                 self.add('width: %s;' % node['width'])
             if node.get('align'):
                 self.add('align-%s;' % node['align'])
-            self.add('">\n')    
+            self.add('">')    
 
         # rewrite the URI if the environment knows about it
         # olduri = node['uri']
@@ -602,12 +604,14 @@ class MarkdownTranslator(SphinxTranslator,Translator):
     #     print (">>>>VISIT PENDING_XFER ", node)
     #     pass    
     
-    def visit_reference(self, node):
-        if self.builder.md_insert_html:
+    def visit_reference(self, node: Element):
+        print (">>>> VISIT REFERENCE ", node,"\n", node.attlist())
+        if self.builder.md_insert_html and node.hasattr('refid'):
             target_uri = ''
-            if node['internal'] and node['refid']:
+
+            if node['internal']:
                 target_uri = "#" + node['refid']
-            elif node['refid']:    
+            else:    
                 print (">>>>VISIT REFERENCE - EXTERNAL ", node)
                 target_uri=node['refid']
             self.add('<a href="{}">'.format(target_uri))

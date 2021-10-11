@@ -5,6 +5,7 @@ from docutils.frontend import OptionParser
 from docutils.nodes import Node
 from io import open
 from os import path
+import posixpath
 
 from sphinx.builders import Builder
 from sphinx.locale import __
@@ -75,14 +76,28 @@ class MarkdownBuilder(Builder):
         #             yield docname
         #     except EnvironmentError:
         #         pass
+        
         return 'pass'
             
+           
             
     def get_target_uri(self, docname: str, typ: str = None):
         if docname not in self.env.all_docs:
             raise NoUri(docname, typ)
         else:
             return docname   + self.out_suffix
+            
+            
+            
+            
+    def build(self, docnames: Iterable[str], summary: str = None, method: str = 'update'):
+        print (">>>>   BUILD flist=",docnames)
+        print (">>>>   BUILD found_docs=",self.env.found_docs)
+        super().build(docnames,summary,method) 
+                
+            
+            
+            
             
             
             
@@ -116,15 +131,45 @@ class MarkdownBuilder(Builder):
             
             
     def assemble_doctree(self,master):
+
         #-> nodes.document:
         #
         # master = root_doc
-        tree = self.env.get_doctree(master)
-        tree = inline_all_toctrees(self, set(), master, tree, darkgreen, [master])
+        self.env.config.root_doc = master
         
-        tree['docname'] = master
+        
+        print (">>>>  ASSEMBLE DOCTREE master document=",master,    
+            "\n         self.env.toc_fignumbers=",self.env.toc_fignumbers
+        )
+        
+        tree = self.env.get_doctree(master)
+        
+        # #rewrite self.env.all_docs
+        # all_docs: Dict[str, float] = {}
+        # all_docs[master] =  self.env.all_docs[master]
+ 
+        # self.env.all_docs = all_docs
+        
+        # all_docs = []
+        # for doc_name in self.env.all_docs:
+        #     all_docs.append(doc_name)
+        
+        
+        
+        
+        tree = inline_all_toctrees(self, set(), master, tree, darkgreen, [master])
+        # tree = inline_all_toctrees(self, set(), master, tree, darkgreen, all_docs)
+        
+        # tree['docname'] = master
+        
+
+        # print (">>>>  ASSEMBLE DOCTREE master document=",tree)
+        # print (">>>>  ASSEMBLE DOCTREE master all documents =",self.env.all_docs)
+        
         # self.env.resolve_references(tree, master, self)
         # self.resolve_ref(tree,master)
+        
+        #!!! FOR_DEBUG
         TransClassList = self.app.registry.get_post_transforms()
         if ReferencesResolver in TransClassList:
             for i in range(len(TransClassList)):
@@ -213,6 +258,8 @@ class MarkdownBuilder(Builder):
             # doctree = self.assemble_doctree(self.current_docname)
             # logger.info('')
             
+            self.post_process_images(doctree) 
+            
             # logger.info('writing... ', nonl=True)
             # logger.info('writing... ', start_doc)
             self.write_doc(self.current_docname, doctree, out_docfile)
@@ -259,8 +306,39 @@ class MarkdownBuilder(Builder):
             logger.warning(__('error writing file %s: %s'), outfilename, err)           
         
         # Accomulate and check document used images
-        Builder.post_process_images(self, doctree)    
+        # Builder.post_process_images(self, doctree)    
        
+
+
+    # def post_process_images(self, doctree: Node) -> None:
+    #     """Pick the best candidate for an image and link down-scaled images to
+    #     their high res version.
+    #     """
+    #     Builder.post_process_images(self, doctree)
+
+
+    #     # for node in doctree.traverse(nodes.image):
+    #     #     if not any((key in node) for key in ['scale', 'width', 'height']):
+    #     #         # resizing options are not given. scaled image link is available
+    #     #         # only for resized images.
+    #     #         continue
+    #     #     elif isinstance(node.parent, nodes.reference):
+    #     #         # A image having hyperlink target
+    #     #         continue
+    #     #     elif 'no-scaled-link' in node['classes']:
+    #     #         # scaled image link is disabled for this node
+    #     #         continue
+
+    #     #     # uri = node['uri']
+    #     #     # reference = nodes.reference('', '', internal=True)
+    #     #     # if uri in self.images:
+    #     #     #     reference['refuri'] = posixpath.join(self.imgpath,
+    #     #     #                                             self.images[uri])
+    #     #     # else:
+    #     #     #     reference['refuri'] = uri
+    #     #     # node.replace_self(reference)
+    #     #     # reference.append(node)
+            
 
     def copy_image_files(self):
         if self.images:
@@ -344,7 +422,8 @@ def resolve_xref_new(self, env: "BuildEnvironment", fromdocname: str, builder: "
     if typ == 'ref':
         resolver = self._resolve_ref_xref
     elif typ == 'numref':
-        resolver = self._resolve_numref_xref
+        # resolver = self._resolve_numref_xref
+        return self._resolve_numref_xref(self,env, fromdocname, builder, typ, target, node, contnode)
     elif typ == 'keyword':
         resolver = self._resolve_keyword_xref
     elif typ == 'doc':
@@ -357,7 +436,7 @@ def resolve_xref_new(self, env: "BuildEnvironment", fromdocname: str, builder: "
         resolver = self._resolve_obj_xref
 
 
-    return resolver(self, env, fromdocname, builder, typ, target, node, contnode)
+    return resolver(env, fromdocname, builder, typ, target, node, contnode)
 
 
 
@@ -381,7 +460,7 @@ def _resolve_numref_xref_new(self,
             "\n    labels= ",self.labels,
             "\n    typ=",typ,
             "\n    fromdocname=",fromdocname,
-            "\n    body=",docname,
+            "\n    docname=",docname,
             )
 
     if not docname:
@@ -414,22 +493,34 @@ def _resolve_numref_xref_new(self,
         figure_id = target_node['ids'][0]
         fignumber = 'undef'
         
-        # print (">>>> _resolve_numref_xref_new 2",
-        #     "\n    -----------",              
-        #     "\n    env.toc_fignumbers=",env.toc_fignumbers,
-        #     "\n    figure_id=",figure_id,
-        #     "\n    labelid=",labelid,
-        #     "\n    fignumber=",fignumber
-        #     )
+        print (">>>> _resolve_numref_xref_new 2",
+            "\n    target node=",target_node,
+            "\n    -----------",              
+            "\n    env.toc_fignumbers=",env.toc_fignumbers,
+            "\n    labelid=",labelid,
+            "\n    docname=",docname, 
+            "\n    figtype=",figtype,
+            "\n    fignumber=",fignumber,        
+            "\n    figure_id=",figure_id,            
+            )
                 
                 
         #  from self.get_fignumber(env, builder, figtype, docname, target_node) 
-        try:       
+        a=''
+        b=''
+        try:
+              
+            print (">>>> _resolve_numref_xref_new 2 env.toc_fignumbers=",env.toc_fignumbers)     
             a = env.toc_fignumbers[docname]
-            b = a[figtype]           
+            print (">>>> _resolve_numref_xref_new 2 A=",a,"docname=",docname)
+            b = a[figtype]  
+            print (">>>> _resolve_numref_xref_new 2 B=",b,"figtype=",figtype)         
             fignumber = b[figure_id]
+            print (">>>> _resolve_numref_xref_new 2 fignumber=",fignumber,"figure_id=",figure_id) 
         except:
             pass    
+
+        
         
         
         if fignumber is None:
@@ -460,6 +551,13 @@ def _resolve_numref_xref_new(self,
             else:
                 # old style format (cf. "Fig.%s")
                 newtitle = title % fignum
+                print (">>>> _resolve_numref_xref_new 3.",
+                       " \n    Create  newtitle=",newtitle,
+                       " \n    Create  title=",title,
+                       " \n    Create  fignum=",fignum,
+                       " \n    Create  fignumber=",fignumber,
+                       ) 
+                       
     except KeyError as exc:
         logger.warning(__('invalid numfig_format: %s (%r)'), title, exc, location=node)
         return contnode
@@ -536,6 +634,8 @@ class ReferencesResolverNew(ReferencesResolver):
                     setattr(domain, 'resolve_xref', resolve_xref_new) 
                     
                     newnode = domain.resolve_xref(domain, self.env, refdoc, self.app.builder, typ, target, node, contnode)
+                    # newnode = domain.resolve_xref(self.env, refdoc, self.app.builder, typ, target, node, contnode)
+
                 # really hardwired reference types
                 elif typ == 'any':
                     newnode = self.resolve_anyref(refdoc, node, contnode)
