@@ -51,11 +51,20 @@ class MarkdownTranslator(Translator):
         pass
 
     def visit_desc_annotation(self, node):
-        self.add('_')
+        node_astext = node.astext().strip()
+
+        if 'property' == node_astext:
+            self.add('**_property_** ')
+            raise nodes.SkipNode
+        elif 'class' == node_astext:
+            self.add('**class** ')
+            raise nodes.SkipNode
+        elif 'exception' == node_astext:
+            self.add('**exception** ')
+            raise nodes.SkipNode
 
     def depart_desc_annotation(self, node):
-        self.get_current_output('body')[-1] = self.get_current_output('body')[-1][:-1]
-        self.add('_ ')
+        pass
 
     def visit_desc_addname(self, node):
         # module preroll for class/method
@@ -92,6 +101,7 @@ class MarkdownTranslator(Translator):
         if ("class" in node.attributes and node.attributes["class"]):
             self.add('\n#### ')
         else:
+            self.add('\n---\n ')
             self.add('\n### ')
 
     def depart_desc_signature(self, node):
@@ -108,7 +118,20 @@ class MarkdownTranslator(Translator):
 
     def visit_desc_parameter(self, node):
         # single method/class ctr param
-        pass
+
+        """
+        For truncate a long parameter value string.
+
+        node[0] parameter name
+        node[1] '='
+        node[2] value
+        """
+
+        max_show_size = 75
+        if 3 <= len(node[:]) and '=' == node[1].astext():
+            node_astext = node[2][0].astext()
+            info = (node_astext[:max_show_size] + ' ...') if len(node_astext) > max_show_size else node_astext
+            node[2][0] = nodes.Text(info)
 
     def depart_desc_parameter(self, node):
         # single method/class ctr param
@@ -193,8 +216,15 @@ class MarkdownTranslator(Translator):
 
     def visit_rubric(self, node):
         """Sphinx Rubric, a heading without relation to the document sectioning
-        http://docutils.sourceforge.net/docs/ref/rst/directives.html#rubric."""
-        self.add('### ')
+        http://docutils.sourceforge.net/docs/ref/rst/directives.html#rubric.
+        
+        FIXME: currently, ignore all Methods table.
+        """
+        if 'Methods' == node.astext():
+            raise nodes.SkipNode
+        elif 'Notes' == node.astext():
+            self.add('* **Notes**  \n')
+            raise nodes.SkipNode
 
     def depart_rubric(self, node):
         """Sphinx Rubric, a heading without relation to the document sectioning
@@ -218,8 +248,11 @@ class MarkdownTranslator(Translator):
 
     def visit_autosummary_table(self, node):
         """Sphinx autosummary See http://www.sphinx-
-        doc.org/en/master/usage/extensions/autosummary.html."""
-        pass
+        doc.org/en/master/usage/extensions/autosummary.html.
+        
+        FIXME: currently, ignore all table.
+        """
+        raise nodes.SkipNode
 
     def depart_autosummary_table(self, node):
         """Sphinx autosummary See http://www.sphinx-
