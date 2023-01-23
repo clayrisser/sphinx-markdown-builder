@@ -97,7 +97,7 @@ class MarkdownTranslator(Translator):
 
     def depart_desc_signature(self, node):
         # the main signature of class/method
-        self.add(')```\n')
+        self.add(')\n```\n')
 
     def visit_desc_parameterlist(self, node):
         # method/class ctor param list
