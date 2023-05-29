@@ -456,6 +456,24 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def depart_paragraph(self, node):
+        # A paragraph maybe child of a table entry, we should not add newline here
+        #
+        #   <row>
+        #     <entry>
+        #       <paragraph>
+        if isinstance(node.parent, nodes.entry):
+            return
+        # Also, a paragraph maybe child of a list item, we should not add new line
+        # when here is not last list item.
+        #
+        #    <bullet_list bullet="-">
+        #       <list_item>
+        #           <paragraph>
+        if isinstance(node.parent, nodes.list_item) and \
+                type(node.parent) == type(node.parent.next_node(descend=False, siblings=True)):
+            return
+        # print(type(node.parent), type(node.parent.next_node(descend=False, siblings=True, ascend=True)))
+
         self.ensure_eol()
         self.add('\n')
 
