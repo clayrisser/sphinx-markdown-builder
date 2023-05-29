@@ -8,6 +8,7 @@ import sys
 
 h = html2text.HTML2Text()
 
+
 class MarkdownTranslator(Translator):
     depth = Depth()
     enumerated_count = {}
@@ -16,7 +17,7 @@ class MarkdownTranslator(Translator):
     tables = []
     tbodys = []
     theads = []
-    
+
     def __init__(self, document, builder=None):
         Translator.__init__(self, document, builder=None)
         self.builder = builder
@@ -55,9 +56,11 @@ class MarkdownTranslator(Translator):
         self.add('_')
 
     def depart_desc_annotation(self, node):
-        # annotation, e.g 'method', 'class'
-        self.get_current_output('body')[-1] = self.get_current_output('body')[-1][:-1]
+        # annotation, e.g 'method', 'class', or a signature
+        stripped = self.get_current_output('body')[-1].strip()
+        self.get_current_output('body')[-1] = stripped
         self.add('_ ')
+
     def visit_desc_addname(self, node):
         # module preroll for class/method
         pass
@@ -87,6 +90,12 @@ class MarkdownTranslator(Translator):
 
     def visit_desc_signature(self, node):
         # the main signature of class/method
+
+        # Insert anchors if enabled by the builder
+        if self.builder.insert_anchors_for_signatures:
+            for sig_id in node.get("ids", ()):
+                self.add('<a name="{}"></a>'.format(sig_id))
+
         # We dont want methods to be at the same level as classes,
         # If signature has a non null class, thats means it is a signature
         # of a class method

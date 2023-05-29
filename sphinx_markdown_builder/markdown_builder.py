@@ -21,6 +21,7 @@ class MarkdownBuilder(Builder):
     current_docname = None
 
     markdown_http_base = 'https://localhost'
+    insert_anchors_for_signatures = False
 
     def init(self):
         self.secnumbers = {}
