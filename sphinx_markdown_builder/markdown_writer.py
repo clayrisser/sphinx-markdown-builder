@@ -370,7 +370,6 @@ class MarkdownTranslator(Translator):
     def depart_row(self, node):
         self.cur_table().exit_row()
 
-
     def visit_entry(self, node):
         self.cur_table().enter_entry()
 
@@ -411,7 +410,7 @@ class MarkdownTranslator(Translator):
 
     def depart_list_item(self, node):
         self.depth.ascend('list_item')
-        # Make sure the list item end with a new line
+        # Make sure the list item ends with a new line
         self.ensure_eol()
 
     def descend(self, node_name):
