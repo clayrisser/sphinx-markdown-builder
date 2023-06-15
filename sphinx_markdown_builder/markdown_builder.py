@@ -1,11 +1,13 @@
-from .markdown_writer import MarkdownWriter, MarkdownTranslator
-from docutils.io import StringOutput
 from io import open
 from os import path
+
+from docutils.io import StringOutput
 from sphinx.builders import Builder
 from sphinx.locale import __
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir, os_path
+
+from .markdown_writer import MarkdownWriter, MarkdownTranslator
 
 logger = logging.getLogger(__name__)
 

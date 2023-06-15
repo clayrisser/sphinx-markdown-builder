@@ -1,40 +1,99 @@
+import os
+from typing import List
+
+from tabulate import tabulate
+from docutils import nodes
+
 from .depth import Depth
 from .doctree2md import Translator, Writer
-from docutils import nodes
-from pydash import _
-import html2text
-import os
-import sys
 
-h = html2text.HTML2Text()
+
+class TableHandler:
+    def __init__(self):
+        self.is_head = False
+        self.is_body = False
+        self.is_row = False
+        self.is_entry = False
+
+        self.headers = []
+        self.body = []
+
+    def enter_head(self):
+        assert not self.is_body
+        self.is_head = True
+
+    def exit_head(self):
+        assert self.is_head
+        self.is_head = False
+
+    def enter_body(self):
+        assert not self.is_head
+        self.is_body = True
+
+    def exit_body(self):
+        assert self.is_body
+        self.is_body = False
+
+    def get_output(self):
+        if self.is_head:
+            return self.headers
+        else:
+            assert self.is_body
+            return self.body
+
+    def enter_row(self):
+        assert self.is_head or self.is_body
+        self.is_row = True
+        self.get_output().append([])
+
+    def exit_row(self):
+        assert self.is_row
+        self.is_row = False
+
+    def enter_entry(self):
+        assert self.is_row
+        self.is_entry = True
+        self.get_output()[-1].append([])
+
+    def exit_entry(self):
+        assert self.is_entry
+        self.is_entry = False
+
+    def add(self, value):
+        assert self.is_entry
+        self.get_output()[-1][-1].append(value)
+
+    @staticmethod
+    def make_row(row):
+        return ["".join(entries) for entries in row]
+
+    def make_table(self):
+        if len(self.headers) == 0 and len(self.body) == 0:
+            return ""
+
+        if len(self.headers) == 0:
+            headers = ["" for _ in self.body[0]]
+        else:
+            assert len(self.headers) == 1
+            headers = self.make_row(self.headers[0])
+
+        body = list(map(self.make_row, self.body))
+        return tabulate(body, headers=headers, tablefmt="github")
 
 
 class MarkdownTranslator(Translator):
-    depth = Depth()
-    enumerated_count = {}
-    table_entries = []
-    table_rows = []
-    tables = []
-    tbodys = []
-    theads = []
-
     def __init__(self, document, builder=None):
-        Translator.__init__(self, document, builder=None)
+        Translator.__init__(self, document, builder)
         self.builder = builder
+        self.depth = Depth()
+        self.enumerated_count = {}
+        self.tables: List[TableHandler] = []
 
-    @property
-    def rows(self):
-        rows = []
-        if not len(self.tables):
-            return rows
-        for node in self.tables[len(self.tables) - 1].children:
-            if isinstance(node, nodes.row):
-                rows.append(node)
-            else:
-                for node in node.children:
-                    if isinstance(node, nodes.row):
-                        rows.append(node)
-        return rows
+    def add(self, value, section='body'):
+        if len(self.tables) > 0:
+            self.tables[-1].add(value)
+        else:
+            super().add(value, section)
 
     def visit_document(self, node):
         pass
@@ -265,12 +324,6 @@ class MarkdownTranslator(Translator):
     def depart_raw(self, node):
         self.ascend('raw')
 
-    def visit_table(self, node):
-        self.tables.append(node)
-
-    def depart_table(self, node):
-        self.tables.pop()
-
     def visit_tabular_col_spec(self, node):
         pass
 
@@ -289,44 +342,42 @@ class MarkdownTranslator(Translator):
     def depart_tgroup(self, node):
         self.ascend('tgroup')
 
-    def visit_thead(self, node):
+    def cur_table(self) -> TableHandler:
         if not len(self.tables):
             raise nodes.SkipNode
-        self.theads.append(node)
+        return self.tables[-1]
 
-    def add_table_header_split(self):
-        for i in range(len(self.table_entries)):
-            length = 0
-            for row in self.table_rows:
-                if len(row.children) > i:
-                    entry_length = len(row.children[i].astext())
-                    if entry_length > length:
-                        length = entry_length
-            self.add('| ' + ''.join(_.map(range(length), lambda: '-')) + ' ')
-        self.add('|\n')
-        self.table_entries = []
+    def visit_table(self, node):
+        self.tables.append(TableHandler())
+
+    def depart_table(self, node):
+        last_table = self.tables.pop()
+        self.add(last_table.make_table())
+
+    def visit_thead(self, node):
+        self.cur_table().enter_head()
 
     def depart_thead(self, node):
-        self.add_table_header_split()
-        self.theads.pop()
+        self.cur_table().exit_head()
 
     def visit_tbody(self, node):
-        if not len(self.tables):
-            raise nodes.SkipNode
-        self.tbodys.append(node)
+        self.cur_table().enter_body()
 
     def depart_tbody(self, node):
-        self.tbodys.pop()
+        self.cur_table().exit_body()
 
     def visit_row(self, node):
-        if not len(self.theads) and not len(self.tbodys):
-            raise nodes.SkipNode
-        self.table_rows.append(node)
+        self.cur_table().enter_row()
 
     def depart_row(self, node):
-        self.add('|\n')
-        if not len(self.theads):
-            self.table_entries = []
+        self.cur_table().exit_row()
+
+
+    def visit_entry(self, node):
+        self.cur_table().enter_entry()
+
+    def depart_entry(self, node):
+        self.cur_table().exit_entry()
 
     def visit_enumerated_list(self, node):
         self.depth.descend('list')
@@ -360,25 +411,6 @@ class MarkdownTranslator(Translator):
 
     def depart_list_item(self, node):
         self.depth.ascend('list_item')
-
-    def visit_entry(self, node):
-        if not len(self.table_rows):
-            raise nodes.SkipNode
-        self.table_entries.append(node)
-        self.add('| ')
-
-    def depart_entry(self, node):
-        length = 0
-        i = len(self.table_entries) - 1
-        for row in self.table_rows:
-            if len(row.children) > i:
-                entry_length = len(row.children[i].astext())
-                if entry_length > length:
-                    length = entry_length
-        padding = ''.join(
-            _.map(range(length - len(node.astext())), lambda: ' ')
-        )
-        self.add(padding + ' ')
 
     def descend(self, node_name):
         self.depth.descend(node_name)

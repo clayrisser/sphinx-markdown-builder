@@ -485,7 +485,7 @@ class Translator(nodes.NodeVisitor):
             parent.next_node(descend=False, siblings=True), nodes.list_item
         ):
             return
-        # List item following a sub list ==> new new line
+        # List item following a sub list ==> no new line
         # <bullet_list bullet="-">
         #   <list_item>
         #     <paragraph> <== we are here
