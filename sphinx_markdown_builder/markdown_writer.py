@@ -214,7 +214,13 @@ class MarkdownTranslator(Translator):
             uri = uri[len(doc_folder):]
             if uri.startswith('/'):
                 uri = '.' + uri
-        self.add('\n\n![image](%s)\n\n' % uri)
+
+        image_tag = f'![image]({uri})'
+        if not isinstance(node.parent, nodes.paragraph):
+            # Adress the case that the image is part of a reference
+            self.add(image_tag)
+        else:
+            self.add(f'\n\n{image_tag}\n\n')
 
     def depart_image(self, node):
         """Image directive."""
@@ -288,7 +294,7 @@ class MarkdownTranslator(Translator):
             raise nodes.SkipNode
         self.theads.append(node)
 
-    def depart_thead(self, node):
+    def add_table_header_split(self):
         for i in range(len(self.table_entries)):
             length = 0
             for row in self.table_rows:
@@ -299,6 +305,9 @@ class MarkdownTranslator(Translator):
             self.add('| ' + ''.join(_.map(range(length), lambda: '-')) + ' ')
         self.add('|\n')
         self.table_entries = []
+
+    def depart_thead(self, node):
+        self.add_table_header_split()
         self.theads.pop()
 
     def visit_tbody(self, node):

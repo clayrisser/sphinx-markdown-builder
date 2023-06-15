@@ -354,11 +354,22 @@ class Translator(nodes.NodeVisitor):
         parts = [part + '\n\n' for part in parts if part]
         return ''.join(parts).strip() + '\n'
 
-    def ensure_eol(self):
-        """Ensure the last line in current base is terminated by new line."""
-        out = self.get_current_output()
-        if out and out[-1] and out[-1][-1] != '\n':
-            out.append('\n')
+    def count_prev_eol(self, section='body'):
+        out_list = self.get_current_output(section)
+        line_break_count = 0
+        for out in reversed(out_list):
+            for char in reversed(out):
+                if char == "\n":
+                    line_break_count += 1
+                else:
+                    return line_break_count
+        return line_break_count
+
+    def ensure_eol(self, count=1, section='body'):
+        """Ensure the last line in current base is terminated by X new lines."""
+        missing_eol = count - self.count_prev_eol(section)
+        if missing_eol > 0:
+            self.add("\n" * missing_eol)
 
     def get_current_output(self, section='body'):
         """Get list or IndentLevel to which we are currently writing."""
@@ -455,26 +466,40 @@ class Translator(nodes.NodeVisitor):
         pass
 
     def depart_paragraph(self, node):
-        # A paragraph maybe child of a table entry, we should not add newline here
-        #
-        #   <row>
-        #     <entry>
-        #       <paragraph>
-        if isinstance(node.parent, nodes.entry):
+        parent = node.parent
+        # Table entry ==> no new line
+        # <row>
+        #   <entry>
+        #     <paragraph> <== we are here
+        if isinstance(parent, nodes.entry):
             return
-        # Also, a paragraph maybe child of a list item, we should not add new line
-        # when here is not last list item.
-        #
-        #    <bullet_list bullet="-">
-        #       <list_item>
+        # Non-last list item ==> no new line
+        # <bullet_list bullet="-">
+        #   <list_item>
+        #     <paragraph> <== we are here
+        #   <list_item>
+        #     <paragraph>
+        if isinstance(
+            parent, nodes.list_item
+        ) and isinstance(
+            parent.next_node(descend=False, siblings=True), nodes.list_item
+        ):
+            return
+        # List item following a sub list ==> new new line
+        # <bullet_list bullet="-">
+        #   <list_item>
+        #     <paragraph> <== we are here
+        #       <bullet_list bullet="*">
+        #         <list_item>
         #           <paragraph>
-        if isinstance(node.parent, nodes.list_item) and \
-                type(node.parent) == type(node.parent.next_node(descend=False, siblings=True)):
+        if isinstance(
+            parent, nodes.list_item
+        ) and isinstance(
+            node.next_node(descend=False, siblings=True), nodes.bullet_list
+        ):
             return
-        # print(type(node.parent), type(node.parent.next_node(descend=False, siblings=True, ascend=True)))
 
-        self.ensure_eol()
-        self.add('\n')
+        self.ensure_eol(2)
 
     def visit_math_block(self, node):
         # docutils math block
@@ -539,6 +564,7 @@ class Translator(nodes.NodeVisitor):
 
     def visit_section(self, node):
         self.section_level += 1
+        self.ensure_eol(2)
 
     def depart_section(self, node):
         self.section_level -= 1
@@ -582,8 +608,7 @@ class Translator(nodes.NodeVisitor):
         self.add((self.section_level + 1) * '#' + ' ')
 
     def depart_title(self, node):
-        self.ensure_eol()
-        self.add('\n')
+        self.ensure_eol(2)
 
     def visit_subtitle(self, node):
         self.add((self.section_level + 2) * '#' + ' ')
