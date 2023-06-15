@@ -274,12 +274,10 @@ class MarkdownTranslator(Translator):
             if uri.startswith('/'):
                 uri = '.' + uri
 
-        image_tag = f'![image]({uri})'
-        if not isinstance(node.parent, nodes.paragraph):
-            # Adress the case that the image is part of a reference
-            self.add(image_tag)
-        else:
-            self.add(f'\n\n{image_tag}\n\n')
+        alt = node.attributes.get('alt', 'image')
+        # We don't need to add EOL before/after the image.
+        # It will be handled by the visit/depart handlers of the paragraph.
+        self.add(f'![{alt}]({uri})')
 
     def depart_image(self, node):
         """Image directive."""
