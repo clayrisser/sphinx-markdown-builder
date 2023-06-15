@@ -461,16 +461,11 @@ class Translator(nodes.NodeVisitor):
 
     @classmethod
     def is_paragraph_requires_eol(cls, node):
-        parent = node.parent
-        # Table entry ==> No new line.
-        if isinstance(parent, nodes.entry):
-            return False
-
-        # List item ==> No new line. It is handled at its visit/depart handlers
-        if isinstance(parent, nodes.list_item):
-            return False
-
-        return True
+        """
+        - Table entry ==> No new line
+        - List item   ==> New line is handled at the list item visit/depart handlers
+        """
+        return not isinstance(node.parent, (nodes.entry, nodes.list_item))
 
     def visit_paragraph(self, node):
         if self.is_paragraph_requires_eol(node):
