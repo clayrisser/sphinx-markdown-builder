@@ -459,44 +459,24 @@ class Translator(nodes.NodeVisitor):
 
     depart_field_body = depart_definition
 
-    def visit_paragraph(self, node):
-        pass
-
-    def depart_paragraph(self, node):
+    @classmethod
+    def is_paragraph_requires_eol(cls, node):
         parent = node.parent
-        # Table entry ==> no new line
-        # <row>
-        #   <entry>
-        #     <paragraph> <== we are here
+        # Table entry ==> No new line.
         if isinstance(parent, nodes.entry):
-            return
-        # Non-last list item ==> no new line
-        # <bullet_list bullet="-">
-        #   <list_item>
-        #     <paragraph> <== we are here
-        #   <list_item>
-        #     <paragraph>
-        if isinstance(
-            parent, nodes.list_item
-        ) and isinstance(
-            parent.next_node(descend=False, siblings=True), nodes.list_item
-        ):
-            return
-        # List item following a sub list ==> no new line
-        # <bullet_list bullet="-">
-        #   <list_item>
-        #     <paragraph> <== we are here
-        #       <bullet_list bullet="*">
-        #         <list_item>
-        #           <paragraph>
-        if isinstance(
-            parent, nodes.list_item
-        ) and isinstance(
-            node.next_node(descend=False, siblings=True), nodes.bullet_list
-        ):
-            return
+            return False
 
-        self.ensure_eol(2)
+        # List item ==> No new line. It is handled at its visit/depart handlers
+        if isinstance(parent, nodes.list_item):
+            return False
+
+        return True
+
+    def visit_paragraph(self, node):
+        if self.is_paragraph_requires_eol(node):
+            self.ensure_eol(2)
+
+    depart_paragraph = visit_paragraph
 
     def visit_math_block(self, node):
         # docutils math block

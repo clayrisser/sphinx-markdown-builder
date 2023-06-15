@@ -399,7 +399,7 @@ class MarkdownTranslator(Translator):
     def visit_list_item(self, node):
         self.depth.descend('list_item')
         depth = self.depth.get('list')
-        depth_padding = ''.join(['    ' for i in range(depth - 1)])
+        depth_padding = '    ' * (depth - 1)
         marker = '*'
         if node.parent.tagname == 'enumerated_list':
             if depth not in self.enumerated_count:
@@ -407,10 +407,14 @@ class MarkdownTranslator(Translator):
             else:
                 self.enumerated_count[depth] = self.enumerated_count[depth] + 1
             marker = str(self.enumerated_count[depth]) + '.'
-        self.add('\n' + depth_padding + marker + ' ')
+        # Make sure the list item prefix starts at a new line
+        self.ensure_eol()
+        self.add(depth_padding + marker + " ")
 
     def depart_list_item(self, node):
         self.depth.ascend('list_item')
+        # Make sure the list item end with a new line
+        self.ensure_eol()
 
     def descend(self, node_name):
         self.depth.descend(node_name)
