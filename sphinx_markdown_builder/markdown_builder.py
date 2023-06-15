@@ -16,13 +16,11 @@ class MarkdownBuilder(Builder):
     format = 'markdown'
     epilog = __('The markdown files are in %(outdir)s.')
 
-    out_suffix = '.md'
     allow_parallel = True
     default_translator_class = MarkdownTranslator
 
+    out_suffix = '.md'
     current_docname = None
-
-    markdown_http_base = 'https://localhost'
     insert_anchors_for_signatures = False
 
     def init(self):
@@ -46,8 +44,12 @@ class MarkdownBuilder(Builder):
                 pass
 
     def get_target_uri(self, docname: str, typ=None):
-        # Returns the target markdown file name
-        return f"{docname}.md"
+        """
+        Returns the target file name.
+        By default, we link to the currently generated markdown files.
+        But, we also support linking to external document (e.g., an html web page).
+        """
+        return f"{docname}{self.config.markdown_uri_doc_suffix}"
 
     def prepare_writing(self, docnames):
         self.writer = MarkdownWriter(self)
