@@ -1,97 +1,46 @@
 import os
 from typing import List
 
-from tabulate import tabulate
 from docutils import nodes
 
+from .contexts import SubContext, TableContext, AnnotationContext
 from .depth import Depth
 from .doctree2md import Translator, Writer
-
-
-class TableHandler:
-    def __init__(self):
-        self.is_head = False
-        self.is_body = False
-        self.is_row = False
-        self.is_entry = False
-
-        self.headers = []
-        self.body = []
-
-    def enter_head(self):
-        assert not self.is_body
-        self.is_head = True
-
-    def exit_head(self):
-        assert self.is_head
-        self.is_head = False
-
-    def enter_body(self):
-        assert not self.is_head
-        self.is_body = True
-
-    def exit_body(self):
-        assert self.is_body
-        self.is_body = False
-
-    def get_output(self):
-        if self.is_head:
-            return self.headers
-        else:
-            assert self.is_body
-            return self.body
-
-    def enter_row(self):
-        assert self.is_head or self.is_body
-        self.is_row = True
-        self.get_output().append([])
-
-    def exit_row(self):
-        assert self.is_row
-        self.is_row = False
-
-    def enter_entry(self):
-        assert self.is_row
-        self.is_entry = True
-        self.get_output()[-1].append([])
-
-    def exit_entry(self):
-        assert self.is_entry
-        self.is_entry = False
-
-    def add(self, value):
-        assert self.is_entry
-        self.get_output()[-1][-1].append(value)
-
-    @staticmethod
-    def make_row(row):
-        return ["".join(entries) for entries in row]
-
-    def make_table(self):
-        if len(self.headers) == 0 and len(self.body) == 0:
-            return ""
-
-        if len(self.headers) == 0:
-            headers = ["" for _ in self.body[0]]
-        else:
-            assert len(self.headers) == 1
-            headers = self.make_row(self.headers[0])
-
-        body = list(map(self.make_row, self.body))
-        return tabulate(body, headers=headers, tablefmt="github")
 
 
 class MarkdownTranslator(Translator):
     def __init__(self, document, builder=None):
         Translator.__init__(self, document, builder)
-        self.builder = builder
         self.depth = Depth()
         self.enumerated_count = {}
-        self.tables: List[TableHandler] = []
+        # Sub context allow us to handle unique cases when post-processing is required
+        self.sub_contexts: List[SubContext] = []
+        # Saves the current descriptor type
+        self.desc_context: List[str] = []
+
+    def reset(self):
+        super().reset()
+        self.depth = Depth()
+        self.enumerated_count = {}
+        self.sub_contexts: List[SubContext] = []
+        self.desc_context: List[str] = []
+
+    def add_context(self, ctx: SubContext):
+        self.sub_contexts.append(ctx)
+
+    def pop_context(self, node):
+        content = self.sub_contexts.pop().make()
+        self.add(content)
+
+    @property
+    def ctx(self) -> SubContext:
+        if not len(self.sub_contexts):
+            raise nodes.SkipNode
+        return self.sub_contexts[-1]
 
     def add(self, value, section='body'):
-        if len(self.tables) > 0:
-            self.tables[-1].add(value)
+        if len(self.sub_contexts) > 0:
+            self.sub_contexts[-1].add(value)
         else:
             super().add(value, section)
 
@@ -102,23 +51,20 @@ class MarkdownTranslator(Translator):
         pass
 
     def visit_title(self, node):
-        self.add((self.section_level) * '#' + ' ')
+        self.ensure_eol(2)
+        self.add((self.section_level * '#') + ' ')
 
     def visit_desc(self, node):
-        pass
+        self.desc_context.append(node.attributes.get("desctype", ""))
 
     def depart_desc(self, node):
-        pass
+        self.desc_context.pop()
 
     def visit_desc_annotation(self, node):
-        # annotation, e.g 'method', 'class'
-        self.add('_')
-
-    def depart_desc_annotation(self, node):
         # annotation, e.g 'method', 'class', or a signature
-        stripped = self.get_current_output('body')[-1].strip()
-        self.get_current_output('body')[-1] = stripped
-        self.add('_ ')
+        self.add_context(AnnotationContext(node))
+
+    depart_desc_annotation = pop_context
 
     def visit_desc_addname(self, node):
         # module preroll for class/method
@@ -130,14 +76,13 @@ class MarkdownTranslator(Translator):
 
     def visit_desc_name(self, node):
         # name of the class/method
-        # Escape "__" which is a formating string for markdown
+        # Escape "__" which is a formatting string for markdown
         if node.rawsource.startswith("__"):
             self.add('\\')
-        pass
 
     def depart_desc_name(self, node):
-        # name of the class/method
-        self.add('(')
+        if self.desc_context[-1] in ('function', 'method', 'class'):
+            self.add('(')
 
     def visit_desc_content(self, node):
         # the description of the class/method
@@ -155,17 +100,20 @@ class MarkdownTranslator(Translator):
             for sig_id in node.get("ids", ()):
                 self.add('<a name="{}"></a>'.format(sig_id))
 
-        # We dont want methods to be at the same level as classes,
-        # If signature has a non null class, thats means it is a signature
+        # We don't want methods to be at the same level as classes,
+        # If signature has a non-null class, that's means it is a signature
         # of a class method
-        if ("class" in node.attributes and node.attributes["class"]):
-            self.add('\n#### ')
+        self.ensure_eol()
+        if "class" in node.attributes and node.attributes["class"]:
+            self.add('#### ')
         else:
-            self.add('\n### ')
+            self.add('### ')
 
     def depart_desc_signature(self, node):
         # the main signature of class/method
-        self.add(')\n')
+        if self.desc_context[-1] in ('function', 'method', 'class'):
+            self.add(')')
+        self.ensure_eol()
 
     def visit_desc_parameterlist(self, node):
         # method/class ctor param list
@@ -193,16 +141,16 @@ class MarkdownTranslator(Translator):
     #
 
     def visit_field_list(self, node):
-        pass
+        self.ensure_eol(2)
 
     def depart_field_list(self, node):
-        pass
+        self.ensure_eol(2)
 
     def visit_field(self, node):
-        self.add('\n')
+        self.ensure_eol(2)
 
     def depart_field(self, node):
-        self.add('\n')
+        self.ensure_eol(1)
 
     def visit_field_name(self, node):
         # field name, e.g 'returns', 'parameters'
@@ -210,6 +158,13 @@ class MarkdownTranslator(Translator):
 
     def depart_field_name(self, node):
         self.add('**')
+
+    def visit_field_body(self, node):
+        self.ensure_eol(1)
+        self.start_level('    ')
+
+    def depart_field_body(self, node):
+        self.finish_level()
 
     def visit_literal_strong(self, node):
         self.add('**')
@@ -257,12 +212,13 @@ class MarkdownTranslator(Translator):
     def visit_rubric(self, node):
         """Sphinx Rubric, a heading without relation to the document sectioning
         http://docutils.sourceforge.net/docs/ref/rst/directives.html#rubric."""
+        self.ensure_eol(2)
         self.add('### ')
 
     def depart_rubric(self, node):
         """Sphinx Rubric, a heading without relation to the document sectioning
         http://docutils.sourceforge.net/docs/ref/rst/directives.html#rubric."""
-        self.add('\n\n')
+        self.ensure_eol(2)
 
     def visit_image(self, node):
         """Image directive."""
@@ -284,13 +240,11 @@ class MarkdownTranslator(Translator):
         pass
 
     def visit_autosummary_table(self, node):
-        """Sphinx autosummary See http://www.sphinx-
-        doc.org/en/master/usage/extensions/autosummary.html."""
+        """Sphinx autosummary See http://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html."""
         pass
 
     def depart_autosummary_table(self, node):
-        """Sphinx autosummary See http://www.sphinx-
-        doc.org/en/master/usage/extensions/autosummary.html."""
+        """Sphinx autosummary See http://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html."""
         pass
 
     ################################################################################
@@ -340,41 +294,40 @@ class MarkdownTranslator(Translator):
     def depart_tgroup(self, node):
         self.ascend('tgroup')
 
-    def cur_table(self) -> TableHandler:
-        if not len(self.tables):
-            raise nodes.SkipNode
-        return self.tables[-1]
+    @property
+    def table_ctx(self) -> TableContext:
+        ctx = self.ctx
+        assert isinstance(ctx, TableContext)
+        return ctx
 
     def visit_table(self, node):
-        self.tables.append(TableHandler())
+        self.add_context(TableContext(node))
 
-    def depart_table(self, node):
-        last_table = self.tables.pop()
-        self.add(last_table.make_table())
+    depart_table = pop_context
 
     def visit_thead(self, node):
-        self.cur_table().enter_head()
+        self.table_ctx.enter_head()
 
     def depart_thead(self, node):
-        self.cur_table().exit_head()
+        self.table_ctx.exit_head()
 
     def visit_tbody(self, node):
-        self.cur_table().enter_body()
+        self.table_ctx.enter_body()
 
     def depart_tbody(self, node):
-        self.cur_table().exit_body()
+        self.table_ctx.exit_body()
 
     def visit_row(self, node):
-        self.cur_table().enter_row()
+        self.table_ctx.enter_row()
 
     def depart_row(self, node):
-        self.cur_table().exit_row()
+        self.table_ctx.exit_row()
 
     def visit_entry(self, node):
-        self.cur_table().enter_entry()
+        self.table_ctx.enter_entry()
 
     def depart_entry(self, node):
-        self.cur_table().exit_entry()
+        self.table_ctx.exit_entry()
 
     def visit_enumerated_list(self, node):
         self.depth.descend('list')

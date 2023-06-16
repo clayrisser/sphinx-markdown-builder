@@ -303,7 +303,7 @@ class Translator(nodes.NodeVisitor):
     std_indent = '    '
 
     def __init__(self, document, builder=None):
-        nodes.NodeVisitor.__init__(self, document)
+        super().__init__(document)
         self.builder = builder
         self.settings = settings = document.settings
         lcode = settings.language_code
@@ -312,17 +312,12 @@ class Translator(nodes.NodeVisitor):
         self.markdown_http_base = builder.config.markdown_http_base if builder else None
         # Warn only once per writer about unsupported elements
         self._warned = set()
-        # Lookup table to get section list from name
-        self._lists = OrderedDict((('head', []), ('body', []), ('foot', [])))
-        # Reset attributes modified by reading
-        self.reset()
-        # Attribute shortcuts
-        self.head, self.body, self.foot = self._lists.values()
-
-    def reset(self):
-        """Initialize object for fresh read."""
-        for part in self._lists.values():
-            part[:] = []
+        # Lookup table to get section list from name (default is ordered dict)
+        self._lists = {
+            "head": [],
+            "body": [],
+            "foot": [],
+        }
 
         # Current section heading level during writing
         self.section_level = 0
@@ -345,21 +340,41 @@ class Translator(nodes.NodeVisitor):
         # Flag for whether to escape characters
         self._escape_text = True
 
+        # Reset attributes modified by reading
+        self.reset()
+
+    def reset(self):
+        """Initialize object for fresh read."""
+        for part in self._lists.values():
+            part[:] = []
+
+        self.section_level = 0
+        self.list_prefixes = []
+        self.indent_levels = []
+        self._in_docinfo = False
+        self._escape_text = True
+
     def astext(self):
         """Return the final formatted document as a string."""
         parts = [''.join(lines).strip() for lines in self._lists.values()]
         parts = [part + '\n\n' for part in parts if part]
         return ''.join(parts).strip() + '\n'
 
-    def count_prev_eol(self, section='body'):
-        out_list = self.get_current_output(section)
+    def _iter_content(self, section="body"):
+        """We iterate over the content from the most recent context to the least"""
+        for ind in reversed(self.indent_levels):
+            yield ind.content
+        yield self._lists[section]
+
+    def count_prev_eol(self, section="body"):
         line_break_count = 0
-        for out in reversed(out_list):
-            for char in reversed(out):
-                if char == "\n":
-                    line_break_count += 1
-                else:
-                    return line_break_count
+        for out_list in self._iter_content(section):
+            for out in reversed(out_list):
+                for char in reversed(out):
+                    if char == "\n":
+                        line_break_count += 1
+                    else:
+                        return line_break_count
         return line_break_count
 
     def ensure_eol(self, count=1, section='body'):
@@ -449,7 +464,7 @@ class Translator(nodes.NodeVisitor):
         raise nodes.SkipNode
 
     def visit_definition(self, node):
-        self.add('\n\n')
+        self.ensure_eol(2)
         self.start_level('    ')
 
     def depart_definition(self, node):
@@ -462,10 +477,12 @@ class Translator(nodes.NodeVisitor):
     @classmethod
     def is_paragraph_requires_eol(cls, node):
         """
-        - Table entry ==> No new line
-        - List item   ==> New line is handled at the list item visit/depart handlers
+        - entry (table)
+          ==> No new line
+        - list_item/field_name/field_body
+          ==> New line is handled at its visit/depart handlers
         """
-        return not isinstance(node.parent, (nodes.entry, nodes.list_item))
+        return not isinstance(node.parent, (nodes.entry, nodes.list_item, nodes.field_name, nodes.field_body))
 
     def visit_paragraph(self, node):
         if self.is_paragraph_requires_eol(node):
@@ -476,16 +493,21 @@ class Translator(nodes.NodeVisitor):
     def visit_math_block(self, node):
         # docutils math block
         self._escape_text = False
-        self.add('$$\n')
+        self.ensure_eol()
+        self.add('$$')
+        self.ensure_eol()
 
     def depart_math_block(self, node):
         self._escape_text = True
         self.ensure_eol()
-        self.add('$$\n\n')
+        self.add('$$')
+        self.ensure_eol(2)
 
     def visit_displaymath(self, node):
         # sphinx math blocks become displaymath
-        self.add('$$\n{}\n$$\n\n'.format(node['latex']))
+        self.ensure_eol()
+        self.add('$$\n{}\n$$'.format(node['latex']))
+        self.ensure_eol(2)
         raise nodes.SkipNode
 
     def visit_math(self, node):
@@ -515,16 +537,21 @@ class Translator(nodes.NodeVisitor):
         code_type = node['classes'][1] if 'code' in node['classes'] else ''
         if 'language' in node:
             code_type = node['language']
-        self.add('```' + code_type + '\n')
+        self.ensure_eol()
+        self.add('```' + code_type)
+        self.ensure_eol()
 
     def depart_literal_block(self, node):
         self._escape_text = True
         self.ensure_eol()
-        self.add('```\n\n')
+        self.add('```')
+        self.ensure_eol(2)
 
     def visit_doctest_block(self, node):
         self._escape_text = False
-        self.add('```python\n')
+        self.ensure_eol(1)
+        self.add('```python')
+        self.ensure_eol(1)
 
     depart_doctest_block = depart_literal_block
 
@@ -561,7 +588,9 @@ class Translator(nodes.NodeVisitor):
         self.finish_level()
 
     def visit_problematic(self, node):
-        self.add('\n\n```\n{}\n```\n\n'.format(node.astext()))
+        self.ensure_eol(2)
+        self.add('```\n{}\n```'.format(node.astext()))
+        self.ensure_eol(2)
         raise nodes.SkipNode
 
     def visit_system_message(self, node):
@@ -569,20 +598,24 @@ class Translator(nodes.NodeVisitor):
             # Level is too low to display
             raise nodes.SkipNode
         line = ', line %s' % node['line'] if node.hasattr('line') else ''
+        self.ensure_eol(2)
         self.add(
-            '```\nSystem Message: {}:{}\n\n{}\n```\n\n'.format(
+            '```System Message: {}:{}\n\n{}\n```'.format(
                 node['source'], line, node.astext()
             )
         )
+        self.ensure_eol(2)
         raise nodes.SkipNode
 
     def visit_title(self, node):
+        self.ensure_eol(2)
         self.add((self.section_level + 1) * '#' + ' ')
 
     def depart_title(self, node):
         self.ensure_eol(2)
 
     def visit_subtitle(self, node):
+        self.ensure_eol(2)
         self.add((self.section_level + 2) * '#' + ' ')
 
     depart_subtitle = depart_title
@@ -590,7 +623,9 @@ class Translator(nodes.NodeVisitor):
     def visit_transition(self, node):
         # Simply replace a transition by a horizontal rule.
         # Could use three or more '*', '_' or '-'.
-        self.add('\n---\n\n')
+        self.ensure_eol()
+        self.add('---')
+        self.ensure_eol(2)
         raise nodes.SkipNode
 
     def _refuri2http(self, node):
@@ -653,7 +688,8 @@ class Translator(nodes.NodeVisitor):
 
     def visit_only(self, node):
         if node['expr'] == 'markdown':
-            self.add(dedent(node.astext()) + '\n')
+            self.add(dedent(node.astext()))
+            self.ensure_eol()
         raise nodes.SkipNode
 
     def visit_runrole_reference(self, node):
