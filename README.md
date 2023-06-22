@@ -1,5 +1,11 @@
 # sphinx-markdown-builder
 
+---
+
+**DISCONTINUED**: This project is no longer maintained. The active version of this project is now being maintained at [liran-funaro/sphinx-markdown-builder](https://github.com/liran-funaro/sphinx-markdown-builder).
+
+---
+
 [![PyPI](https://img.shields.io/pypi/v/sphinx-markdown-builder.svg?style=flat-square)](https://pypi.org/project/sphinx-markdown-builder)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/sphinx-markdown-builder.svg?style=flat-square)](https://pypi.org/project/sphinx-markdown-builder)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sphinx-markdown-builder.svg?style=flat-square)](https://pypi.org/project/sphinx-markdown-builder)
